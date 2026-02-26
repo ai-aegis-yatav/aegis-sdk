@@ -1,0 +1,58 @@
+{
+  "name": "@aiaegis.io/sdk",
+  "version": "0.1.0",
+  "description": "Official JavaScript/TypeScript SDK for the AEGIS Defense API",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "aegis",
+    "ai-security",
+    "llm-safety",
+    "sdk",
+    "typescript"
+  ],
+  "author": "AEGIS Team <aegis@yatavent.com>",
+  "license": "MIT",
+  "homepage": "https://aiaegis.io",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ai-aegis-yatav/aegis-sdk.git",
+    "directory": "javascript"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0",
+    "@types/node": "^20.0.0"
+  }
+}

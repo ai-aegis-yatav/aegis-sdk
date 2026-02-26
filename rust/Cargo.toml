@@ -1,0 +1,31 @@
+[package]
+name = "aegis-sdk"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+description = "Official Rust SDK for the AEGIS Defense API"
+license = "MIT"
+repository = "https://github.com/ai-aegis-yatav/aegis-sdk"
+homepage = "https://aiaegis.io"
+documentation = "https://docs.rs/aegis-sdk"
+keywords = ["aegis", "ai-security", "llm-safety", "sdk"]
+categories = ["api-bindings", "web-programming::http-client"]
+
+[dependencies]
+reqwest = { version = "0.12", features = ["json", "stream"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
+thiserror = "2.0"
+url = "2.5"
+futures-core = "0.3"
+async-stream = "0.3"
+pin-project-lite = "0.2"
+uuid = { version = "1.0", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+tokio = { version = "1.0", features = ["full"] }
+serde_json = "1.0"
+mockito = "1.4"
+wiremock = "0.6"

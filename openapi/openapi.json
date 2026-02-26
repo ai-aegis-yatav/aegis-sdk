@@ -1,0 +1,1601 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "AEGIS Defense API",
+    "version": "0.1.0",
+    "description": "AI Engine for Guardrail & Inspection System\n\nComprehensive AI security platform providing multi-tier defense capabilities:\n\n## 🛡️ Defense Tiers\n\n### V1 Basic Tier - Foundation Defense\n- **Judgment Engine**: Real-time AI output validation with PALADIN pipeline\n- **Rules Management**: Dynamic rule-based filtering and pattern matching\n- **Escalation System**: Human-in-the-loop review workflow\n- **Evidence Collection**: Comprehensive audit trail and evidence storage\n- **Analytics Dashboard**: Real-time metrics and performance monitoring\n- **ML Inference**: Direct model inference for embeddings and classification\n- **NLP Processing**: Natural language analysis and threat detection\n- **VLA Analysis**: Vision-Language-Action multimodal processing\n- **AI Act Compliance**: Korean AI Basic Act 2026 compliance suite\n\n### V2 Professional Tier - Advanced Detection\n- **Classification Engine**: Class-RAG semantic categorization\n- **Jailbreak Detection**: Multi-pattern jailbreak attempt identification\n- **Safety Validation**: Comprehensive content safety checks\n- **Advanced Attacks**: Detection of sophisticated attack patterns\n- **PALADIN Control**: Fine-grained defense layer management\n- **AdversaFlow**: Attack campaign tracking and visualization\n\n### V3 Enterprise Tier - Cutting-Edge Algorithms\n- **GuardNet**: Graph-based hierarchical threat detection\n- **JBShield**: Linear representation hypothesis defense\n- **CCFC**: Dual-track core analysis system\n- **MULI**: Logit-based toxicity detection\n- **Agent Security**: DPI/IPI protection for AI agents\n- **Anomaly Detection**: Time-series behavioral analysis\n- **Multimodal Security**: Cross-modal attack detection\n- **Evolution Engine**: Genetic algorithm-based attack generation\n- **SABER**: Bayesian risk estimation framework\n\n### DevSecOps - Operational Excellence\n- **EvalOps**: CI/CD security gates and benchmarks\n- **Red Team**: Automated adversarial testing\n- **Attack Library**: Comprehensive threat database\n- **Regression Testing**: Continuous security validation\n\n## 🔐 Authentication\n\nAll endpoints require authentication via:\n- **Bearer Token**: `Authorization: Bearer <token>`\n- **API Key**: `X-API-Key: <key>`\n\n## 🇰🇷 Korean AI Basic Act Compliance\n\nFull compliance with 2026 Korean AI regulations:\n- C2PA-based watermarking\n- PII detection (Korean-specific)\n- Risk assessment frameworks\n- 5-year audit retention\n- High-impact domain handling\n- Deepfake labeling",
+    "contact": {
+      "name": "AEGIS Team",
+      "email": "aegis@yatavent.com",
+      "url": "https://aiaegis.io"
+    },
+    "license": {
+      "name": "Proprietary",
+      "url": "https://aiaegis.io/license"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Local development (default)"
+    },
+    {
+      "url": "http://localhost:8080",
+      "description": "Local development (alternative)"
+    },
+    {
+      "url": "http://localhost:30080",
+      "description": "Kubernetes local"
+    },
+    {
+      "url": "https://api.aiaegis.io",
+      "description": "Production"
+    },
+    {
+      "url": "https://api-staging.aiaegis.io",
+      "description": "Staging"
+    }
+  ],
+  "security": [
+    {"bearer_auth": []},
+    {"api_key": []}
+  ],
+  "tags": [
+    {
+      "name": "Health",
+      "description": "Service health and readiness checks"
+    },
+    {
+      "name": "V1-Judgment",
+      "description": "Core judgment engine with PALADIN pipeline integration"
+    },
+    {
+      "name": "V1-Rules",
+      "description": "Dynamic rule management and pattern matching"
+    },
+    {
+      "name": "V1-Escalations",
+      "description": "Human review workflow management"
+    },
+    {
+      "name": "V1-Analytics",
+      "description": "Comprehensive analytics and metrics"
+    },
+    {
+      "name": "V1-Evidence",
+      "description": "Audit trail and evidence management"
+    },
+    {
+      "name": "V1-ML",
+      "description": "Machine learning inference services"
+    },
+    {
+      "name": "V1-NLP",
+      "description": "Natural language processing"
+    },
+    {
+      "name": "V1-VLA",
+      "description": "Vision-Language-Action analysis"
+    },
+    {
+      "name": "V1-AIAct",
+      "description": "Korean AI Basic Act 2026 compliance"
+    },
+    {
+      "name": "V2-Defense",
+      "description": "PALADIN defense layer control"
+    },
+    {
+      "name": "V2-Classify",
+      "description": "Advanced content classification"
+    },
+    {
+      "name": "V2-Jailbreak",
+      "description": "Jailbreak attempt detection"
+    },
+    {
+      "name": "V2-Safety",
+      "description": "Content safety validation"
+    },
+    {
+      "name": "V2-Advanced",
+      "description": "Advanced attack pattern detection"
+    },
+    {
+      "name": "V2-AdversaFlow",
+      "description": "Attack campaign tracking"
+    },
+    {
+      "name": "V3-Defense",
+      "description": "Advanced defense algorithms"
+    },
+    {
+      "name": "V3-Agent",
+      "description": "AI agent security"
+    },
+    {
+      "name": "V3-Anomaly",
+      "description": "Anomaly detection systems"
+    },
+    {
+      "name": "V3-Multimodal",
+      "description": "Cross-modal security"
+    },
+    {
+      "name": "V3-Evolution",
+      "description": "Attack evolution engine"
+    },
+    {
+      "name": "V3-SABER",
+      "description": "Risk estimation framework"
+    },
+    {
+      "name": "Ops-EvalOps",
+      "description": "CI/CD security gates"
+    },
+    {
+      "name": "Ops-RedTeam",
+      "description": "Automated red team testing"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Basic health check",
+        "operationId": "healthCheck",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/detailed": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Detailed health check",
+        "operationId": "healthDetailed",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Detailed health status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailedHealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/readiness": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Readiness probe",
+        "operationId": "readiness",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Service is ready",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service not ready"
+          }
+        }
+      }
+    },
+    "/liveness": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Liveness probe",
+        "operationId": "liveness",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Service is alive"
+          }
+        }
+      }
+    },
+    "/v1/judge": {
+      "post": {
+        "tags": ["V1-Judgment"],
+        "summary": "Judge content",
+        "description": "Evaluate content through the PALADIN defense pipeline",
+        "operationId": "judge",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JudgeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Judgment completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JudgeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/judge/stream": {
+      "post": {
+        "tags": ["V1-Judgment"],
+        "summary": "Judge content (streaming)",
+        "description": "Stream judgment results as they are processed",
+        "operationId": "judgeStream",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JudgeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Streaming judgment results",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/judge/batch": {
+      "post": {
+        "tags": ["V1-Judgment"],
+        "summary": "Batch judge content",
+        "description": "Judge multiple content items in a single request",
+        "operationId": "judgeBatch",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchJudgeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Batch judgment results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchJudgeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/judgments": {
+      "get": {
+        "tags": ["V1-Judgment"],
+        "summary": "List judgments",
+        "description": "Retrieve historical judgments with filtering",
+        "operationId": "listJudgments",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "schema": {"type": "string"}
+          },
+          {
+            "name": "session_id",
+            "in": "query",
+            "schema": {"type": "string"}
+          },
+          {
+            "name": "judgment_type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["APPROVE", "MODIFY", "BLOCK", "ESCALATE", "REASK"]
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "schema": {"type": "string", "format": "date-time"}
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "schema": {"type": "string", "format": "date-time"}
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of judgments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JudgmentListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/judgments/{id}": {
+      "get": {
+        "tags": ["V1-Judgment"],
+        "summary": "Get judgment details",
+        "operationId": "getJudgment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Judgment details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JudgeResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/v1/rules": {
+      "get": {
+        "tags": ["V1-Rules"],
+        "summary": "List rules",
+        "operationId": "listRules",
+        "parameters": [
+          {
+            "name": "active",
+            "in": "query",
+            "schema": {"type": "boolean"}
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {"type": "string"}
+          },
+          {
+            "name": "severity_min",
+            "in": "query",
+            "schema": {"type": "integer", "minimum": 1, "maximum": 10}
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of rules",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["V1-Rules"],
+        "summary": "Create rule",
+        "operationId": "createRule",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRuleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Rule created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/rules/{id}": {
+      "get": {
+        "tags": ["V1-Rules"],
+        "summary": "Get rule",
+        "operationId": "getRule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rule details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["V1-Rules"],
+        "summary": "Update rule",
+        "operationId": "updateRule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRuleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rule updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["V1-Rules"],
+        "summary": "Delete rule",
+        "operationId": "deleteRule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"}
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Rule deleted"
+          }
+        }
+      }
+    },
+    "/v1/rules/reload": {
+      "post": {
+        "tags": ["V1-Rules"],
+        "summary": "Reload rules",
+        "description": "Reload all rules from database",
+        "operationId": "reloadRules",
+        "responses": {
+          "200": {
+            "description": "Rules reloaded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "rules_loaded": {"type": "integer"},
+                    "message": {"type": "string"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/rules/test": {
+      "post": {
+        "tags": ["V1-Rules"],
+        "summary": "Test rules",
+        "description": "Test content against all active rules",
+        "operationId": "testRules",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestRulesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Test results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestRulesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ai-act/watermark": {
+      "post": {
+        "tags": ["V1-AIAct"],
+        "summary": "Apply AI Act compliant watermark",
+        "description": "Apply C2PA-based watermark for Korean AI Basic Act compliance with multi-layer protection",
+        "operationId": "applyWatermark",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AIActWatermarkRequest"
+              },
+              "examples": {
+                "text": {
+                  "summary": "Text watermarking",
+                  "value": {
+                    "content": "AI generated medical diagnosis report",
+                    "content_type": "text",
+                    "model_id": "claude-3-opus",
+                    "model_provider": "anthropic",
+                    "disclosure_level": "full",
+                    "high_impact_domain": "medical"
+                  }
+                },
+                "image": {
+                  "summary": "Image watermarking",
+                  "value": {
+                    "content": "base64_encoded_image_data",
+                    "content_type": "image",
+                    "model_id": "dall-e-3",
+                    "model_provider": "openai",
+                    "disclosure_level": "partial"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Watermark applied successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIActWatermarkResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ai-act/verify": {
+      "post": {
+        "tags": ["V1-AIAct"],
+        "summary": "Verify AI Act compliance",
+        "description": "Verify watermark presence and validate C2PA manifest",
+        "operationId": "verifyCompliance",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AIActVerifyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Verification result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIActVerifyResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ai-act/guidelines": {
+      "get": {
+        "tags": ["V1-AIAct"],
+        "summary": "Get AI Act guidelines",
+        "description": "Retrieve current Korean AI Basic Act requirements and compliance guidelines",
+        "operationId": "getGuidelines",
+        "responses": {
+          "200": {
+            "description": "Current guidelines",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIActGuidelinesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ai-act/guardrail/check": {
+      "post": {
+        "tags": ["V1-AIAct"],
+        "summary": "Check AI guardrails",
+        "description": "Perform lightweight algorithm-based guardrail checks with optional LLM enhancement",
+        "operationId": "checkGuardrails",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardrailCheckRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Guardrail check result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuardrailCheckResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ai-act/pii/detect": {
+      "post": {
+        "tags": ["V1-AIAct"],
+        "summary": "Detect PII",
+        "description": "Detect personal information including Korean-specific patterns (RRN, phone, etc.)",
+        "operationId": "detectPII",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PIIDetectRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "PII detection result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PIIDetectResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ai-act/risk/assess": {
+      "post": {
+        "tags": ["V1-AIAct"],
+        "summary": "Assess AI risk",
+        "description": "Comprehensive risk assessment using NIST AI RMF and OWASP Top 10 for LLM 2025",
+        "operationId": "assessRisk",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RiskAssessRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Risk assessment result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskAssessResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ai-act/audit/logs": {
+      "get": {
+        "tags": ["V1-AIAct"],
+        "summary": "Get audit logs",
+        "description": "Retrieve audit logs with 5-year retention per Korean AI Act requirements",
+        "operationId": "getAuditLogs",
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "schema": {"type": "string", "format": "date-time"}
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "schema": {"type": "string", "format": "date-time"}
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "schema": {"type": "string"}
+          },
+          {
+            "name": "model_id",
+            "in": "query",
+            "schema": {"type": "string"}
+          },
+          {
+            "name": "event_type",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["watermark_applied", "watermark_verified", "pii_detected", "risk_assessed", "violation_reported"]
+            }
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/offset"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Audit logs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ai-act/high-impact/watermark": {
+      "post": {
+        "tags": ["V1-AIAct"],
+        "summary": "High-impact AI watermarking",
+        "description": "Enhanced watermarking for 10 critical domains (medical, legal, financial, etc.)",
+        "operationId": "highImpactWatermark",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HighImpactWatermarkRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "High-impact watermark applied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HighImpactWatermarkResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ai-act/deepfake/label": {
+      "post": {
+        "tags": ["V1-AIAct"],
+        "summary": "Label deepfake content",
+        "description": "Apply mandatory deepfake labeling per Korean AI Act",
+        "operationId": "labelDeepfake",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeepfakeLabelRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Deepfake labeled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeepfakeLabelResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ai-act/report-violation": {
+      "post": {
+        "tags": ["V1-AIAct"],
+        "summary": "Report AI Act violation",
+        "description": "Report and process AI Basic Act compliance violations",
+        "operationId": "reportViolation",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ViolationReportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Violation reported",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ViolationReportResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearer_auth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      },
+      "api_key": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
+      }
+    },
+    "parameters": {
+      "limit": {
+        "name": "limit",
+        "in": "query",
+        "description": "Maximum number of items to return",
+        "schema": {
+          "type": "integer",
+          "default": 20,
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "offset": {
+        "name": "offset",
+        "in": "query",
+        "description": "Number of items to skip",
+        "schema": {
+          "type": "integer",
+          "default": 0,
+          "minimum": 0
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "InternalError": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["healthy", "degraded", "unhealthy"]
+          },
+          "version": {"type": "string"},
+          "timestamp": {"type": "string", "format": "date-time"}
+        }
+      },
+      "DetailedHealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {"type": "string"},
+          "version": {"type": "string"},
+          "components": {
+            "type": "object",
+            "properties": {
+              "database": {"$ref": "#/components/schemas/ComponentHealth"},
+              "cache": {"$ref": "#/components/schemas/ComponentHealth"},
+              "ml_service": {"$ref": "#/components/schemas/ComponentHealth"},
+              "s3": {"$ref": "#/components/schemas/ComponentHealth"}
+            }
+          }
+        }
+      },
+      "ComponentHealth": {
+        "type": "object",
+        "properties": {
+          "status": {"type": "string"},
+          "latency_ms": {"type": "number"},
+          "message": {"type": "string"}
+        }
+      },
+      "ReadinessResponse": {
+        "type": "object",
+        "properties": {
+          "ready": {"type": "boolean"},
+          "components": {"type": "object"}
+        }
+      },
+      "JudgeRequest": {
+        "type": "object",
+        "required": ["content"],
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Content to judge",
+            "maxLength": 50000
+          },
+          "context": {
+            "type": "object",
+            "properties": {
+              "history": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Previous conversation history"
+              },
+              "domain": {"type": "string"},
+              "user_id": {"type": "string"},
+              "session_id": {"type": "string"}
+            }
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "strict": {"type": "boolean", "default": false},
+              "explain": {"type": "boolean", "default": true},
+              "max_retries": {"type": "integer", "default": 3}
+            }
+          }
+        }
+      },
+      "JudgeResponse": {
+        "type": "object",
+        "properties": {
+          "judgment": {
+            "type": "string",
+            "enum": ["APPROVE", "MODIFY", "BLOCK", "ESCALATE", "REASK"]
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "risk_score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "reason": {"type": "string"},
+          "modified_content": {"type": "string"},
+          "evidence": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/Evidence"}
+          },
+          "defense_layers": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/DefenseLayer"}
+          },
+          "processing_time_ms": {"type": "integer"}
+        }
+      },
+      "BatchJudgeRequest": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/JudgeRequest"},
+            "minItems": 1,
+            "maxItems": 100
+          },
+          "parallel": {"type": "boolean", "default": true}
+        }
+      },
+      "BatchJudgeResponse": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/JudgeResponse"}
+          },
+          "total_time_ms": {"type": "integer"}
+        }
+      },
+      "JudgmentListResponse": {
+        "type": "object",
+        "properties": {
+          "judgments": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/JudgeResponse"}
+          },
+          "total": {"type": "integer"},
+          "limit": {"type": "integer"},
+          "offset": {"type": "integer"}
+        }
+      },
+      "Evidence": {
+        "type": "object",
+        "properties": {
+          "type": {"type": "string"},
+          "description": {"type": "string"},
+          "severity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10
+          },
+          "matches": {
+            "type": "array",
+            "items": {"type": "string"}
+          }
+        }
+      },
+      "DefenseLayer": {
+        "type": "object",
+        "properties": {
+          "layer": {"type": "string"},
+          "name": {"type": "string"},
+          "triggered": {"type": "boolean"},
+          "details": {"type": "string"}
+        }
+      },
+      "RuleResponse": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string", "format": "uuid"},
+          "name": {"type": "string"},
+          "pattern": {"type": "string"},
+          "action": {
+            "type": "string",
+            "enum": ["block", "flag", "modify"]
+          },
+          "category": {"type": "string"},
+          "severity": {"type": "integer"},
+          "active": {"type": "boolean"},
+          "created_at": {"type": "string", "format": "date-time"},
+          "updated_at": {"type": "string", "format": "date-time"}
+        }
+      },
+      "RuleListResponse": {
+        "type": "object",
+        "properties": {
+          "rules": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/RuleResponse"}
+          },
+          "total": {"type": "integer"},
+          "limit": {"type": "integer"},
+          "offset": {"type": "integer"}
+        }
+      },
+      "CreateRuleRequest": {
+        "type": "object",
+        "required": ["name", "pattern", "action"],
+        "properties": {
+          "name": {"type": "string"},
+          "pattern": {"type": "string"},
+          "action": {
+            "type": "string",
+            "enum": ["block", "flag", "modify"]
+          },
+          "category": {"type": "string"},
+          "severity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10
+          },
+          "active": {"type": "boolean", "default": true}
+        }
+      },
+      "UpdateRuleRequest": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "pattern": {"type": "string"},
+          "action": {
+            "type": "string",
+            "enum": ["block", "flag", "modify"]
+          },
+          "category": {"type": "string"},
+          "severity": {"type": "integer"},
+          "active": {"type": "boolean"}
+        }
+      },
+      "TestRulesRequest": {
+        "type": "object",
+        "required": ["content"],
+        "properties": {
+          "content": {"type": "string"},
+          "rule_ids": {
+            "type": "array",
+            "items": {"type": "string"}
+          }
+        }
+      },
+      "TestRulesResponse": {
+        "type": "object",
+        "properties": {
+          "matches": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "rule_id": {"type": "string"},
+                "rule_name": {"type": "string"},
+                "action": {"type": "string"},
+                "matched_text": {"type": "string"}
+              }
+            }
+          },
+          "total_matches": {"type": "integer"}
+        }
+      },
+      "AIActWatermarkRequest": {
+        "type": "object",
+        "required": ["content", "content_type", "model_id", "model_provider"],
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Content to watermark"
+          },
+          "content_type": {
+            "type": "string",
+            "enum": ["text", "image", "audio", "video"]
+          },
+          "model_id": {"type": "string"},
+          "model_provider": {"type": "string"},
+          "generation_metadata": {
+            "type": "object",
+            "properties": {
+              "timestamp": {"type": "string", "format": "date-time"},
+              "prompt_hash": {"type": "string"},
+              "parameters": {"type": "object"}
+            }
+          },
+          "disclosure_level": {
+            "type": "string",
+            "enum": ["full", "partial", "minimal"],
+            "default": "full"
+          },
+          "high_impact_domain": {
+            "type": "string",
+            "enum": ["medical", "legal", "financial", "education", "employment", "public_safety", "infrastructure", "autonomous_systems", "biometric", "social_scoring"]
+          }
+        }
+      },
+      "AIActWatermarkResponse": {
+        "type": "object",
+        "properties": {
+          "watermarked_content": {"type": "string"},
+          "watermark_id": {"type": "string"},
+          "c2pa_manifest_url": {"type": "string"},
+          "verification_code": {"type": "string"},
+          "audit_log_id": {"type": "string"},
+          "compliance_status": {
+            "type": "object",
+            "properties": {
+              "is_compliant": {"type": "boolean"},
+              "requirements_met": {
+                "type": "array",
+                "items": {"type": "string"}
+              }
+            }
+          }
+        }
+      },
+      "AIActVerifyRequest": {
+        "type": "object",
+        "required": ["content"],
+        "properties": {
+          "content": {"type": "string"},
+          "watermark_id": {"type": "string"},
+          "verification_code": {"type": "string"},
+          "check_deepfake": {"type": "boolean", "default": false}
+        }
+      },
+      "AIActVerifyResponse": {
+        "type": "object",
+        "properties": {
+          "is_verified": {"type": "boolean"},
+          "watermark_found": {"type": "boolean"},
+          "watermark_details": {"type": "object"},
+          "c2pa_valid": {"type": "boolean"},
+          "deepfake_labeled": {"type": "boolean"},
+          "compliance_status": {
+            "type": "object",
+            "properties": {
+              "is_compliant": {"type": "boolean"},
+              "violations": {
+                "type": "array",
+                "items": {"type": "string"}
+              }
+            }
+          }
+        }
+      },
+      "AIActGuidelinesResponse": {
+        "type": "object",
+        "properties": {
+          "version": {"type": "string"},
+          "effective_date": {"type": "string", "format": "date"},
+          "requirements": {
+            "type": "object",
+            "properties": {
+              "watermarking": {"type": "object"},
+              "disclosure": {"type": "object"},
+              "audit": {"type": "object"},
+              "deepfake": {"type": "object"}
+            }
+          }
+        }
+      },
+      "GuardrailCheckRequest": {
+        "type": "object",
+        "required": ["text"],
+        "properties": {
+          "text": {"type": "string"},
+          "use_llm": {"type": "boolean", "default": false},
+          "check_pii": {"type": "boolean", "default": true},
+          "check_prompt_injection": {"type": "boolean", "default": true},
+          "check_toxicity": {"type": "boolean", "default": true},
+          "korean_specific": {"type": "boolean", "default": true}
+        }
+      },
+      "GuardrailCheckResponse": {
+        "type": "object",
+        "properties": {
+          "is_safe": {"type": "boolean"},
+          "violations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {"type": "string"},
+                "severity": {"type": "string"},
+                "details": {"type": "string"},
+                "position": {
+                  "type": "object",
+                  "properties": {
+                    "start": {"type": "integer"},
+                    "end": {"type": "integer"}
+                  }
+                }
+              }
+            }
+          },
+          "checks_performed": {"type": "object"},
+          "confidence": {"type": "number"},
+          "latency_ms": {"type": "integer"}
+        }
+      },
+      "PIIDetectRequest": {
+        "type": "object",
+        "required": ["text"],
+        "properties": {
+          "text": {"type": "string"},
+          "mask_pii": {"type": "boolean", "default": false},
+          "include_korean": {"type": "boolean", "default": true}
+        }
+      },
+      "PIIDetectResponse": {
+        "type": "object",
+        "properties": {
+          "pii_detected": {"type": "boolean"},
+          "pii_items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {"type": "string"},
+                "value": {"type": "string"},
+                "position": {"type": "object"},
+                "confidence": {"type": "number"}
+              }
+            }
+          },
+          "masked_text": {"type": "string"},
+          "statistics": {"type": "object"}
+        }
+      },
+      "RiskAssessRequest": {
+        "type": "object",
+        "required": ["content"],
+        "properties": {
+          "content": {"type": "string"},
+          "context": {
+            "type": "object",
+            "properties": {
+              "domain": {"type": "string"},
+              "user_type": {"type": "string"},
+              "sensitivity_level": {
+                "type": "string",
+                "enum": ["low", "medium", "high"]
+              }
+            }
+          },
+          "assessment_frameworks": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["nist_ai_rmf", "owasp_llm_2025"]
+            }
+          }
+        }
+      },
+      "RiskAssessResponse": {
+        "type": "object",
+        "properties": {
+          "overall_risk": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "critical"]
+          },
+          "risk_score": {"type": "number"},
+          "assessments": {"type": "object"},
+          "recommendations": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "high_impact": {"type": "boolean"}
+        }
+      },
+      "AuditLogsResponse": {
+        "type": "object",
+        "properties": {
+          "logs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {"type": "string"},
+                "timestamp": {"type": "string", "format": "date-time"},
+                "event_type": {"type": "string"},
+                "user_id": {"type": "string"},
+                "model_id": {"type": "string"},
+                "details": {"type": "object"},
+                "compliance_info": {"type": "object"}
+              }
+            }
+          },
+          "total": {"type": "integer"},
+          "limit": {"type": "integer"},
+          "offset": {"type": "integer"}
+        }
+      },
+      "HighImpactWatermarkRequest": {
+        "type": "object",
+        "required": ["content", "domain"],
+        "properties": {
+          "content": {"type": "string"},
+          "domain": {
+            "type": "string",
+            "enum": ["medical", "legal", "financial", "education", "employment", "public_safety", "infrastructure", "autonomous_systems", "biometric", "social_scoring"]
+          },
+          "purpose": {"type": "string"},
+          "provider_info": {"type": "object"},
+          "enhanced_tracking": {"type": "boolean"}
+        }
+      },
+      "HighImpactWatermarkResponse": {
+        "type": "object",
+        "properties": {
+          "watermarked_content": {"type": "string"},
+          "watermark_id": {"type": "string"},
+          "compliance_certificate": {"type": "object"},
+          "enhanced_tracking_id": {"type": "string"},
+          "multi_layer_verification": {"type": "object"}
+        }
+      },
+      "DeepfakeLabelRequest": {
+        "type": "object",
+        "required": ["content_url", "content_type"],
+        "properties": {
+          "content_url": {"type": "string"},
+          "content_type": {
+            "type": "string",
+            "enum": ["image", "video", "audio"]
+          },
+          "detection_confidence": {"type": "number"},
+          "labeling_language": {
+            "type": "string",
+            "enum": ["ko", "en", "multi"]
+          }
+        }
+      },
+      "DeepfakeLabelResponse": {
+        "type": "object",
+        "properties": {
+          "is_deepfake": {"type": "boolean"},
+          "confidence": {"type": "number"},
+          "label_applied": {"type": "boolean"},
+          "label_details": {"type": "object"},
+          "verification_url": {"type": "string"},
+          "report_id": {"type": "string"}
+        }
+      },
+      "ViolationReportRequest": {
+        "type": "object",
+        "required": ["violation_type", "description"],
+        "properties": {
+          "violation_type": {
+            "type": "string",
+            "enum": ["missing_watermark", "false_disclosure", "deepfake_unlabeled", "pii_exposure"]
+          },
+          "content_url": {"type": "string"},
+          "description": {"type": "string"},
+          "reporter_contact": {"type": "string"},
+          "evidence": {"type": "object"}
+        }
+      },
+      "ViolationReportResponse": {
+        "type": "object",
+        "properties": {
+          "report_id": {"type": "string"},
+          "status": {"type": "string"},
+          "priority": {"type": "string"},
+          "estimated_review_time": {"type": "string"},
+          "tracking_url": {"type": "string"},
+          "next_steps": {
+            "type": "array",
+            "items": {"type": "string"}
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {"type": "string"},
+          "message": {"type": "string"},
+          "request_id": {"type": "string"},
+          "timestamp": {"type": "string", "format": "date-time"}
+        }
+      }
+    }
+  }
+}
