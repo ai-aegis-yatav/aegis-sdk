@@ -46,7 +46,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.ai-aegis-yatav.aegis-sdk:java:main-SNAPSHOT")
+    implementation("com.github.ai-aegis-yatav:aegis-sdk:main-SNAPSHOT")
 }
 ```
 
@@ -61,8 +61,8 @@ dependencies {
 </repositories>
 
 <dependency>
-    <groupId>com.github.ai-aegis-yatav.aegis-sdk</groupId>
-    <artifactId>java</artifactId>
+    <groupId>com.github.ai-aegis-yatav</groupId>
+    <artifactId>aegis-sdk</artifactId>
     <version>main-SNAPSHOT</version>
 </dependency>
 ```
