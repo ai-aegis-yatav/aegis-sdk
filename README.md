@@ -1,6 +1,6 @@
 # AEGIS SDK
 
-Official SDKs for the [AEGIS Defense API](https://aiaegis.io) — AI Engine for Guardrail & Inspection System.
+Official SDKs for the [AEGIS Defense](https://aiaegis.io) — AI Engine for Guardrail & Inspection System.
 
 Comprehensive AI security platform providing multi-tier defense capabilities for LLM applications.
 
@@ -84,7 +84,7 @@ dependencies {
 #### JavaScript / TypeScript
 
 ```typescript
-import { AegisClient } from '@aiaegis.io/sdk';
+import { AegisClient } from '@aegis-ai/sdk';
 
 const client = new AegisClient({ apiKey: 'aegis_sk_...' });
 

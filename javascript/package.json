@@ -1,5 +1,5 @@
 {
-  "name": "@aiaegis.io/sdk",
+  "name": "@aegis-ai/sdk",
   "version": "0.1.0",
   "description": "Official JavaScript/TypeScript SDK for the AEGIS Defense API",
   "type": "module",

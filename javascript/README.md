@@ -5,17 +5,17 @@ Official JavaScript/TypeScript SDK for the [AEGIS Defense API](https://aiaegis.i
 ## Installation
 
 ```bash
-npm install @aiaegis.io/sdk
+npm install @aegis-ai/sdk
 # or
-pnpm add @aiaegis.io/sdk
+pnpm add @aegis-ai/sdk
 # or
-yarn add @aiaegis.io/sdk
+yarn add @aegis-ai/sdk
 ```
 
 ## Quick Start
 
 ```typescript
-import { AegisClient } from '@aiaegis.io/sdk';
+import { AegisClient } from '@aegis-ai/sdk';
 
 const client = new AegisClient({ apiKey: 'aegis_sk_...' });
 
@@ -74,7 +74,7 @@ for await (const judgment of client.judge.list({ limit: 50 })) {
 ## Error Handling
 
 ```typescript
-import { TierAccessError, QuotaExceededError, AuthenticationError } from '@aiaegis.io/sdk';
+import { TierAccessError, QuotaExceededError, AuthenticationError } from '@aegis-ai/sdk';
 
 try {
   await client.jailbreak.detect({ content: 'test' });
