@@ -198,6 +198,51 @@ curl -X POST https://api.aiaegis.io/v3/judge \
 - **Evolution Engine** — Genetic algorithm-based attack generation
 - **SABER** — Bayesian risk estimation framework
 
+## Integrations
+
+### OpenClaw — AI Agent Defense Plugin
+
+`@aegis-ai/guard-openclaw` is an enterprise-grade AI agent defense plugin for [OpenClaw](https://github.com/openclaw/openclaw) (>=2026.2). It integrates the AEGIS PALADIN 6-layer defense pipeline into the OpenClaw lifecycle with zero code changes.
+
+#### Install
+
+```bash
+npm install git+https://github.com/ai-aegis-yatav/aegis-sdk.git#subdirectory=integrations/openclaw
+```
+
+#### Quick Start
+
+```bash
+# 1. Add to claw.json
+echo '{ "plugins": ["@aegis-ai/guard-openclaw"] }' > claw.json
+
+# 2. Set API key
+export AEGIS_API_KEY="aegis_sk_..."
+
+# 3. Start your agent — AEGIS Guard activates automatically
+```
+
+#### Defense Layers
+
+| Layer | Hook | Detection |
+|---|---|---|
+| Inbound Guard | `preMessageProcess` | DPI / IPI (Direct & Indirect Prompt Injection) |
+| Tool Guard | `preToolExecution` | STAC (Sequential Tool Abuse Chain) / iMIST |
+| Output Guard | `postToolExecution` + `preMessageSend` | IPI in outputs, PII leaks, harmful content |
+| Memory Guard | `preMemoryStore` | MINJA / InjecMEM / MemoryGraft |
+| Reasoning Guard | `onAgentReasoning` | UDora / PoT / CoT hijacking |
+| Heartbeat Guard | `heartbeat` | Anomaly detection (Isolation Forest) |
+
+#### Guard Modes
+
+| Mode | Block Threshold | Escalate Threshold | Behavior |
+|---|---|---|---|
+| `strict` | 0.30 | 0.15 | Aggressive blocking, minimal false negatives |
+| `balanced` | 0.60 | 0.35 | Balanced precision / recall (recommended) |
+| `permissive` | 0.85 | 0.55 | Warn-oriented, minimal false positives |
+
+For full documentation, see [`integrations/openclaw/README.md`](./integrations/openclaw/README.md).
+
 ## Documentation
 
 - **Full Documentation**: [docs.aiaegis.io](https://docs.aiaegis.io)

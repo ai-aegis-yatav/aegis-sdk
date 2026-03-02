@@ -1,0 +1,37 @@
+{
+  "name": "aegis-guard",
+  "version": "0.1.0",
+  "displayName": "AEGIS Guard — AI Agent Defense",
+  "description": "Enterprise-grade AI agent defense powered by AEGIS PALADIN 6-layer pipeline. Protects against prompt injection, tool chain attacks, memory poisoning, reasoning hijacking, and more.",
+  "entry": "dist/index.js",
+  "permissions": [
+    "lifecycle:preMessageProcess",
+    "lifecycle:preToolExecution",
+    "lifecycle:postToolExecution",
+    "lifecycle:preMemoryStore",
+    "lifecycle:preMessageSend",
+    "lifecycle:onAgentReasoning",
+    "lifecycle:heartbeat",
+    "network:external"
+  ],
+  "configuration": {
+    "AEGIS_API_KEY": {
+      "type": "string",
+      "required": true,
+      "description": "Your AEGIS API key (aegis_sk_...)"
+    },
+    "AEGIS_BASE_URL": {
+      "type": "string",
+      "required": false,
+      "default": "https://api.aegis.ai",
+      "description": "AEGIS API base URL (for self-hosted deployments)"
+    },
+    "AEGIS_GUARD_MODE": {
+      "type": "string",
+      "required": false,
+      "default": "balanced",
+      "enum": ["strict", "balanced", "permissive"],
+      "description": "Defense strictness: strict (block aggressively), balanced, permissive (warn only)"
+    }
+  }
+}

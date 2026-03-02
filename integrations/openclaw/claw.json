@@ -1,0 +1,37 @@
+{
+  "name": "@aegis-ai/guard-openclaw",
+  "version": "0.1.0",
+  "description": "Enterprise AI agent defense powered by AEGIS PALADIN — protects against prompt injection, tool chain attacks, memory poisoning, reasoning hijacking, and more.",
+  "author": "AEGIS Team",
+  "license": "MIT",
+  "homepage": "https://aegis.ai/integrations/openclaw",
+  "repository": "https://github.com/ai-aegis-yatav/aegis-sdk/tree/main/integrations/openclaw",
+  "keywords": [
+    "security",
+    "defense",
+    "prompt-injection",
+    "jailbreak",
+    "dpi",
+    "ipi",
+    "memory-poisoning",
+    "tool-chain",
+    "paladin"
+  ],
+  "permissions": [
+    "lifecycle:preMessageProcess",
+    "lifecycle:preToolExecution",
+    "lifecycle:postToolExecution",
+    "lifecycle:preMemoryStore",
+    "lifecycle:preMessageSend",
+    "lifecycle:onAgentReasoning",
+    "lifecycle:heartbeat",
+    "network:external"
+  ],
+  "entry": "dist/index.js",
+  "configuration": {
+    "AEGIS_API_KEY": { "type": "string", "required": true },
+    "AEGIS_BASE_URL": { "type": "string", "default": "https://api.aegis.ai" },
+    "AEGIS_GUARD_MODE": { "type": "string", "default": "balanced", "enum": ["strict", "balanced", "permissive"] }
+  },
+  "minOpenClawVersion": "2026.2.0"
+}
