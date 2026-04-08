@@ -1,29 +1,49 @@
-"""Agent resource — V3 agent security endpoints."""
+"""Agent resource — V3 agent security endpoints.
+
+Server expects ``prompt`` (or ``agent_input``), ``external_data`` (array of
+strings, also accepted as ``tools``), ``session_id``, ``user_id``, optional
+``agent_type`` and ``context``.
+"""
 
 from __future__ import annotations
 
-from typing import Any, Dict
+import uuid
+from typing import Any, Dict, List, Optional
 
-from aegis.models.agent import (
-    AgentScanRequest,
-    AgentScanResponse,
-    ToolchainRequest,
-    ToolchainResponse,
-)
 from aegis.resources._base import AsyncResource, SyncResource
+
+
+def _scan_body(
+    prompt: str,
+    *,
+    external_data: Optional[List[str]] = None,
+    session_id: Optional[str] = None,
+    user_id: Optional[str] = None,
+    agent_type: Optional[str] = None,
+    context: Optional[Dict[str, Any]] = None,
+    **kwargs: Any,
+) -> Dict[str, Any]:
+    body: Dict[str, Any] = {
+        "prompt": prompt,
+        "external_data": external_data or [],
+        "session_id": session_id or str(uuid.uuid4()),
+        "user_id": user_id or "sdk-smoke",
+    }
+    if agent_type is not None:
+        body["agent_type"] = agent_type
+    if context is not None:
+        body["context"] = context
+    body.update(kwargs)
+    return body
 
 
 class SyncAgent(SyncResource):
 
-    def scan(self, prompt: str, **kwargs: Any) -> AgentScanResponse:
-        req = AgentScanRequest(prompt=prompt, **kwargs)
-        data = self._post("/v3/agent/scan", json=req.model_dump(exclude_none=True))
-        return AgentScanResponse.model_validate(data)
+    def scan(self, prompt: str, **kwargs: Any) -> Dict[str, Any]:
+        return self._post("/v3/agent/scan", json=_scan_body(prompt, **kwargs))
 
-    def toolchain(self, tools: list[Dict[str, Any]], **kwargs: Any) -> ToolchainResponse:
-        req = ToolchainRequest(tools=tools, **kwargs)
-        data = self._post("/v3/agent/toolchain", json=req.model_dump(exclude_none=True))
-        return ToolchainResponse.model_validate(data)
+    def toolchain(self, tools: List[Dict[str, Any]], **kwargs: Any) -> Dict[str, Any]:
+        return self._post("/v3/agent/toolchain", json={"tools": tools, **kwargs})
 
     def memory_poisoning(self, **kwargs: Any) -> Dict[str, Any]:
         return self._post("/v3/agent/memory-poisoning", json=kwargs)
@@ -37,17 +57,11 @@ class SyncAgent(SyncResource):
 
 class AsyncAgent(AsyncResource):
 
-    async def scan(self, prompt: str, **kwargs: Any) -> AgentScanResponse:
-        req = AgentScanRequest(prompt=prompt, **kwargs)
-        data = await self._post("/v3/agent/scan", json=req.model_dump(exclude_none=True))
-        return AgentScanResponse.model_validate(data)
+    async def scan(self, prompt: str, **kwargs: Any) -> Dict[str, Any]:
+        return await self._post("/v3/agent/scan", json=_scan_body(prompt, **kwargs))
 
-    async def toolchain(
-        self, tools: list[Dict[str, Any]], **kwargs: Any
-    ) -> ToolchainResponse:
-        req = ToolchainRequest(tools=tools, **kwargs)
-        data = await self._post("/v3/agent/toolchain", json=req.model_dump(exclude_none=True))
-        return ToolchainResponse.model_validate(data)
+    async def toolchain(self, tools: List[Dict[str, Any]], **kwargs: Any) -> Dict[str, Any]:
+        return await self._post("/v3/agent/toolchain", json={"tools": tools, **kwargs})
 
     async def memory_poisoning(self, **kwargs: Any) -> Dict[str, Any]:
         return await self._post("/v3/agent/memory-poisoning", json=kwargs)

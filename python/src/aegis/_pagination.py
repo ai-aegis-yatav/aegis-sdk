@@ -27,10 +27,12 @@ class SyncPaginator(Generic[T]):
         fetch_page: Any,
         params: Dict[str, Any],
         item_cls: type,
+        items_key: Optional[str] = None,
     ) -> None:
         self._fetch_page = fetch_page
         self._params = params
         self._item_cls = item_cls
+        self._items_key = items_key
         self._current_page = params.get("page", 1)
         self._buffer: List[Any] = []
         self._exhausted = False
@@ -52,13 +54,32 @@ class SyncPaginator(Generic[T]):
                 raise StopIteration
         return self._buffer.pop(0)
 
+    def _extract_items(self, data: Any) -> List[Any]:
+        if isinstance(data, list):
+            return data
+        if not isinstance(data, dict):
+            return []
+        if self._items_key and self._items_key in data:
+            return data[self._items_key] or []
+        for key in ("items", "results", "data", "events", "campaigns",
+                    "rules", "judgments", "escalations", "evidence",
+                    "api_keys", "templates"):
+            v = data.get(key)
+            if isinstance(v, list):
+                return v
+        return []
+
     def _load_next_page(self) -> None:
         params = {**self._params, "page": self._current_page}
         data = self._fetch_page(params)
-        self._total = data.get("total")
-        items = data.get("items", [])
+        if isinstance(data, dict):
+            self._total = data.get("total")
+        items = self._extract_items(data)
         self._buffer = items
-        has_more = data.get("has_more", len(items) >= params.get("limit", 20))
+        has_more = (
+            isinstance(data, dict)
+            and data.get("has_more", len(items) >= params.get("limit", 20))
+        )
         if not items or not has_more:
             self._exhausted = True
         self._current_page += 1
@@ -75,10 +96,12 @@ class AsyncPaginator(Generic[T]):
         fetch_page: Any,
         params: Dict[str, Any],
         item_cls: type,
+        items_key: Optional[str] = None,
     ) -> None:
         self._fetch_page = fetch_page
         self._params = params
         self._item_cls = item_cls
+        self._items_key = items_key
         self._current_page = params.get("page", 1)
         self._buffer: List[Any] = []
         self._exhausted = False
@@ -100,13 +123,32 @@ class AsyncPaginator(Generic[T]):
                 raise StopAsyncIteration
         return self._buffer.pop(0)
 
+    def _extract_items(self, data: Any) -> List[Any]:
+        if isinstance(data, list):
+            return data
+        if not isinstance(data, dict):
+            return []
+        if self._items_key and self._items_key in data:
+            return data[self._items_key] or []
+        for key in ("items", "results", "data", "events", "campaigns",
+                    "rules", "judgments", "escalations", "evidence",
+                    "api_keys", "templates"):
+            v = data.get(key)
+            if isinstance(v, list):
+                return v
+        return []
+
     async def _load_next_page(self) -> None:
         params = {**self._params, "page": self._current_page}
         data = await self._fetch_page(params)
-        self._total = data.get("total")
-        items = data.get("items", [])
+        if isinstance(data, dict):
+            self._total = data.get("total")
+        items = self._extract_items(data)
         self._buffer = items
-        has_more = data.get("has_more", len(items) >= params.get("limit", 20))
+        has_more = (
+            isinstance(data, dict)
+            and data.get("has_more", len(items) >= params.get("limit", 20))
+        )
         if not items or not has_more:
             self._exhausted = True
         self._current_page += 1

@@ -4,40 +4,40 @@ import (
 	"context"
 
 	"github.com/ai-aegis-yatav/aegis-sdk/go/internal"
-	"github.com/ai-aegis-yatav/aegis-sdk/go/models"
 )
 
+// SafetyService — V2 content safety check.
 type SafetyService struct {
 	t *internal.Transport
 }
 
-func (s *SafetyService) Check(ctx context.Context, req models.SafetyCheckRequest) (*models.SafetyCheckResponse, error) {
-	var resp models.SafetyCheckResponse
-	if err := s.t.Do(ctx, "POST", "/safety/check", req, &resp); err != nil {
-		return nil, err
-	}
-	return &resp, nil
-}
-
-func (s *SafetyService) CheckBatch(ctx context.Context, req models.SafetyCheckBatchRequest) (*models.SafetyCheckBatchResponse, error) {
-	var resp models.SafetyCheckBatchResponse
-	if err := s.t.Do(ctx, "POST", "/safety/check/batch", req, &resp); err != nil {
-		return nil, err
-	}
-	return &resp, nil
-}
-
-func (s *SafetyService) Categories(ctx context.Context) ([]models.CategoryInfo, error) {
-	var resp []models.CategoryInfo
-	if err := s.t.Do(ctx, "GET", "/safety/categories", nil, &resp); err != nil {
+func (s *SafetyService) Check(ctx context.Context, text string) (map[string]any, error) {
+	var resp map[string]any
+	if err := s.t.Do(ctx, "POST", "/v2/safety/check", map[string]any{"text": text}, &resp); err != nil {
 		return nil, err
 	}
 	return resp, nil
 }
 
-func (s *SafetyService) Backends(ctx context.Context) ([]models.SafetyBackend, error) {
-	var resp []models.SafetyBackend
-	if err := s.t.Do(ctx, "GET", "/safety/backends", nil, &resp); err != nil {
+func (s *SafetyService) CheckBatch(ctx context.Context, texts []string) (map[string]any, error) {
+	var resp map[string]any
+	if err := s.t.Do(ctx, "POST", "/v2/safety/check/batch", map[string]any{"texts": texts}, &resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (s *SafetyService) Categories(ctx context.Context) (any, error) {
+	var resp any
+	if err := s.t.Do(ctx, "GET", "/v2/safety/categories", nil, &resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (s *SafetyService) Backends(ctx context.Context) (any, error) {
+	var resp any
+	if err := s.t.Do(ctx, "GET", "/v2/safety/backends", nil, &resp); err != nil {
 		return nil, err
 	}
 	return resp, nil

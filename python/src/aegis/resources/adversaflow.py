@@ -18,8 +18,8 @@ class SyncAdversaFlow(SyncResource):
             item_cls=AttackCampaign,
         )
 
-    def tree(self) -> Dict[str, Any]:
-        return self._get("/v2/adversaflow/tree")
+    def tree(self, campaign_id: str) -> Dict[str, Any]:
+        return self._get(f"/v2/adversaflow/tree/{campaign_id}")
 
     def trace(self, campaign_id: str) -> AttackTrace:
         data = self._get(f"/v2/adversaflow/trace/{campaign_id}")
@@ -45,8 +45,8 @@ class AsyncAdversaFlow(AsyncResource):
             item_cls=AttackCampaign,
         )
 
-    async def tree(self) -> Dict[str, Any]:
-        return await self._get("/v2/adversaflow/tree")
+    async def tree(self, campaign_id: str) -> Dict[str, Any]:
+        return await self._get(f"/v2/adversaflow/tree/{campaign_id}")
 
     async def trace(self, campaign_id: str) -> AttackTrace:
         data = await self._get(f"/v2/adversaflow/trace/{campaign_id}")

@@ -57,6 +57,7 @@ declare class Paginator<T> implements AsyncIterable<T> {
     private _total?;
     constructor(transport: Transport, path: string, params?: Record<string, string | number | undefined>);
     get total(): number | undefined;
+    private extractItems;
     [Symbol.asyncIterator](): AsyncIterator<T>;
     toArray(): Promise<T[]>;
 }
@@ -721,10 +722,10 @@ declare class ML {
     private t;
     constructor(t: Transport);
     health(): Promise<Record<string, unknown>>;
-    embed(req: EmbedRequest): Promise<EmbedResponse>;
-    embedBatch(texts: string[], model?: string): Promise<EmbedResponse[]>;
-    classify(req: ClassifyMLRequest): Promise<ClassifyMLResponse>;
-    similarity(req: SimilarityRequest): Promise<SimilarityResponse>;
+    embed(text: string, model?: string): Promise<Record<string, unknown>>;
+    embedBatch(texts: string[], model?: string): Promise<Record<string, unknown>>;
+    classify(text: string, opts?: Record<string, unknown>): Promise<Record<string, unknown>>;
+    similarity(query: string, documents?: string[], opts?: Record<string, unknown>): Promise<Record<string, unknown>>;
 }
 declare class NLP {
     private t;
@@ -736,35 +737,38 @@ declare class NLP {
 declare class AiAct {
     private t;
     constructor(t: Transport);
-    watermark(req: WatermarkRequest): Promise<WatermarkResponse>;
-    highImpactWatermark(req: WatermarkRequest): Promise<WatermarkResponse>;
+    watermark(content: string, opts?: Record<string, unknown>): Promise<Record<string, unknown>>;
+    highImpactWatermark(content: string, opts?: Record<string, unknown>): Promise<Record<string, unknown>>;
     deepfakeLabel(body: Record<string, unknown>): Promise<Record<string, unknown>>;
-    verify(content: string): Promise<Record<string, unknown>>;
+    verify(content: string, opts?: Record<string, unknown>): Promise<Record<string, unknown>>;
     guidelines(): Promise<Record<string, unknown>>;
-    guardrailCheck(content: string): Promise<Record<string, unknown>>;
-    piiDetect(req: PiiDetectRequest): Promise<PiiDetectResponse>;
-    riskAssess(systemDescription: string, domain?: string): Promise<Record<string, unknown>>;
+    guardrailCheck(content: string, opts?: Record<string, unknown>): Promise<Record<string, unknown>>;
+    piiDetect(content: string, opts?: {
+        mask?: boolean;
+        entity_types?: string[];
+    }): Promise<Record<string, unknown>>;
+    riskAssess(systemDescription: string, opts?: Record<string, unknown>): Promise<Record<string, unknown>>;
     auditLogs(params?: Record<string, string>): Promise<Record<string, unknown>>;
 }
 declare class Classify {
     private t;
     constructor(t: Transport);
-    classify(req: ContentClassifyRequest): Promise<ContentClassifyResponse>;
-    batch(requests: ContentClassifyRequest[]): Promise<ContentClassifyResponse[]>;
+    classify(content: string, opts?: Record<string, unknown>): Promise<Record<string, unknown>>;
+    batch(requests: any[]): Promise<Record<string, unknown>>;
     categories(): Promise<Record<string, unknown>[]>;
 }
 declare class Jailbreak {
     private t;
     constructor(t: Transport);
-    detect(req: JailbreakDetectRequest): Promise<JailbreakDetectResponse>;
-    detectBatch(requests: JailbreakDetectRequest[]): Promise<JailbreakDetectResponse[]>;
+    detect(content: string, opts?: Record<string, unknown>): Promise<Record<string, unknown>>;
+    detectBatch(requests: any[]): Promise<Record<string, unknown>>;
     types(): Promise<Record<string, unknown>[]>;
 }
 declare class Safety {
     private t;
     constructor(t: Transport);
-    check(req: SafetyCheckRequest): Promise<SafetyCheckResponse>;
-    checkBatch(requests: SafetyCheckRequest[]): Promise<SafetyCheckResponse[]>;
+    check(content: string, opts?: Record<string, unknown>): Promise<Record<string, unknown>>;
+    checkBatch(requests: any[]): Promise<Record<string, unknown>>;
     categories(): Promise<Record<string, unknown>[]>;
     backends(): Promise<Record<string, unknown>[]>;
 }
@@ -773,9 +777,9 @@ declare class Defense {
     constructor(t: Transport);
     paladinStats(): Promise<Record<string, unknown>>;
     enableLayer(layerName: string): Promise<Record<string, unknown>>;
-    trustValidate(req: TrustValidateRequest): Promise<TrustValidateResponse>;
+    trustValidate(content: string, opts?: Record<string, unknown>): Promise<Record<string, unknown>>;
     trustProfile(): Promise<Record<string, unknown>>;
-    ragDetect(req: RagDetectRequest): Promise<RagDetectResponse>;
+    ragDetect(query: string, documents?: string[], opts?: Record<string, unknown>): Promise<Record<string, unknown>>;
     ragSecureQuery(body: Record<string, unknown>): Promise<Record<string, unknown>>;
     circuitBreakerEvaluate(content: string): Promise<CircuitBreakerResponse>;
     circuitBreakerStatus(): Promise<CircuitBreakerStatus>;
@@ -785,7 +789,7 @@ declare class Defense {
 declare class Advanced {
     private t;
     constructor(t: Transport);
-    detect(req: AdvancedDetectRequest): Promise<AdvancedDetectResponse>;
+    detect(content: string): Promise<Record<string, unknown>>;
     hybridWeb(content: string): Promise<Record<string, unknown>>;
     vsh(content: string): Promise<Record<string, unknown>>;
     fewShot(content: string): Promise<Record<string, unknown>>;
@@ -801,9 +805,10 @@ declare class AdversaFlow {
         page?: number;
         limit?: number;
     }): Paginator<unknown>;
-    tree(): Promise<Record<string, unknown>>;
-    trace(campaignId: string): Promise<Record<string, unknown>>;
+    tree(campaignId: string): Promise<Record<string, unknown>>;
+    trace(campaignId: string, nodeId: string): Promise<Record<string, unknown>>;
     stats(campaignId: string): Promise<Record<string, unknown>>;
+    metrics(campaignId: string): Promise<Record<string, unknown>>;
     record(body: Record<string, unknown>): Promise<Record<string, unknown>>;
 }
 declare class GuardNet {
@@ -818,8 +823,14 @@ declare class GuardNet {
 declare class Agent {
     private t;
     constructor(t: Transport);
-    scan(req: AgentScanRequest): Promise<AgentScanResponse>;
-    toolchain(req: ToolchainRequest): Promise<ToolchainResponse>;
+    scan(prompt: string, opts?: {
+        external_data?: string[];
+        session_id?: string;
+        user_id?: string;
+        agent_type?: string;
+        context?: Record<string, unknown>;
+    }): Promise<Record<string, unknown>>;
+    toolchain(tools: any[], opts?: Record<string, unknown>): Promise<Record<string, unknown>>;
     memoryPoisoning(body: Record<string, unknown>): Promise<Record<string, unknown>>;
     reasoningHijack(body: Record<string, unknown>): Promise<Record<string, unknown>>;
     toolDisguise(body: Record<string, unknown>): Promise<Record<string, unknown>>;
@@ -828,35 +839,58 @@ declare class Anomaly {
     private t;
     constructor(t: Transport);
     algorithms(): Promise<Record<string, unknown>[]>;
-    detect(req: AnomalyDetectRequest): Promise<AnomalyDetectResponse>;
-    detectBatch(requests: AnomalyDetectRequest[]): Promise<AnomalyDetectResponse[]>;
+    detect(opts: {
+        metric?: string;
+        algorithm?: string;
+        value?: number;
+        history?: number[];
+        data_points?: any[];
+        threshold?: number;
+    }): Promise<Record<string, unknown>>;
     events(opts?: {
-        page?: number;
         limit?: number;
-    }): Paginator<unknown>;
+        range?: string;
+        min_score?: number;
+    }): Promise<Record<string, unknown>>;
     stats(): Promise<Record<string, unknown>>;
 }
 declare class Multimodal {
     private t;
     constructor(t: Transport);
-    scan(req: MultimodalScanRequest): Promise<MultimodalScanResponse>;
-    imageAttack(body: Record<string, unknown>): Promise<Record<string, unknown>>;
+    scan(content: string | null, opts?: {
+        image?: Record<string, unknown>;
+        audio_transcription?: string;
+        check_types?: string[];
+    }): Promise<Record<string, unknown>>;
+    image(body: Record<string, unknown>): Promise<Record<string, unknown>>;
     viscra(body: Record<string, unknown>): Promise<Record<string, unknown>>;
     mml(body: Record<string, unknown>): Promise<Record<string, unknown>>;
+    imageAttack(body: Record<string, unknown>): Promise<Record<string, unknown>>;
 }
 declare class Evolution {
     private t;
     constructor(t: Transport);
-    generate(seedPrompt: string, opts?: Record<string, unknown>): Promise<Record<string, unknown>>;
+    generate(seedPrompt: string, opts?: {
+        categories?: string[];
+        attack_type?: string;
+        count?: number;
+        difficulty?: string;
+        include_multi_turn?: boolean;
+        mutation_rate?: number;
+    }): Promise<Record<string, unknown>>;
     evolve(body: Record<string, unknown>): Promise<Record<string, unknown>>;
     stats(): Promise<Record<string, unknown>>;
 }
 declare class Saber {
     private t;
     constructor(t: Transport);
-    estimate(req: SaberEstimateRequest): Promise<SaberEstimateResponse>;
-    evaluate(req: SaberEvaluateRequest): Promise<SaberEvaluateResponse>;
-    budget(): Promise<Record<string, unknown>>;
+    estimate(content?: any, opts?: Record<string, unknown>): Promise<Record<string, unknown>>;
+    evaluate(content: string, opts?: Record<string, unknown>): Promise<Record<string, unknown>>;
+    budget(opts?: {
+        tau?: number;
+        alpha?: number;
+        beta?: number;
+    }): Promise<Record<string, unknown>>;
     compare(content: string, defenses: string[]): Promise<Record<string, unknown>>;
     report(reportId: string): Promise<Record<string, unknown>>;
 }

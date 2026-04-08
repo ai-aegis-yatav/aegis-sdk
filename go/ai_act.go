@@ -2,71 +2,138 @@ package aegis
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/ai-aegis-yatav/aegis-sdk/go/internal"
-	"github.com/ai-aegis-yatav/aegis-sdk/go/models"
 )
 
+// AiActService — V1 EU AI Act compliance.
 type AiActService struct {
 	t *internal.Transport
 }
 
-func (s *AiActService) Watermark(ctx context.Context, req models.WatermarkRequest) (*models.WatermarkResponse, error) {
-	var resp models.WatermarkResponse
-	if err := s.t.Do(ctx, "POST", "/ai-act/watermark", req, &resp); err != nil {
-		return nil, err
+func bytesOf(s string) []byte { return []byte(s) }
+
+func defaultWatermarkBody(content string) map[string]any {
+	return map[string]any{
+		"content_type": "text",
+		"content":      bytesOf(content),
+		"ai_model": map[string]any{
+			"model_name": "smoke-test", "model_version": "1.0",
+			"model_type": "text-generation", "provider": "aegis",
+		},
+		"service_provider": map[string]any{
+			"provider_name": "smoke-test", "provider_id": "aegis-smoke",
+		},
+		"risk_level":       "limited",
+		"watermark_config": map[string]any{"method": "invisible", "strength": 0.5},
 	}
-	return &resp, nil
 }
 
-func (s *AiActService) Verify(ctx context.Context, token string) (*models.WatermarkVerifyResponse, error) {
-	var resp models.WatermarkVerifyResponse
-	body := map[string]string{"token": token}
-	if err := s.t.Do(ctx, "POST", "/ai-act/watermark/verify", body, &resp); err != nil {
-		return nil, err
+func defaultHighImpactBody(content string) map[string]any {
+	return map[string]any{
+		"domain":       "education",
+		"content_type": "text",
+		"content":      bytesOf(content),
+		"ai_model": map[string]any{
+			"model_name": "smoke-test", "model_version": "1.0",
+			"model_type": "text-generation", "provider": "aegis",
+		},
+		"risk_assessment": map[string]any{
+			"risk_level": "high", "impact_areas": []string{"education"},
+		},
+		"watermark_config": map[string]any{
+			"method": "invisible", "strength": 0.9, "high_impact": true,
+		},
 	}
-	return &resp, nil
 }
 
-func (s *AiActService) PiiDetect(ctx context.Context, req models.PiiDetectRequest) (*models.PiiDetectResponse, error) {
-	var resp models.PiiDetectResponse
-	if err := s.t.Do(ctx, "POST", "/ai-act/pii-detect", req, &resp); err != nil {
-		return nil, err
+func defaultVerifyBody(content string) map[string]any {
+	return map[string]any{
+		"content_type":        "text",
+		"content":             bytesOf(content),
+		"check_tampering":     true,
+		"include_provenance":  false,
 	}
-	return &resp, nil
 }
 
-func (s *AiActService) RiskAssess(ctx context.Context, req models.RiskAssessRequest) (*models.RiskAssessResponse, error) {
-	var resp models.RiskAssessResponse
-	if err := s.t.Do(ctx, "POST", "/ai-act/risk-assess", req, &resp); err != nil {
+func (s *AiActService) Watermark(ctx context.Context, content string) (map[string]any, error) {
+	var resp map[string]any
+	if err := s.t.Do(ctx, "POST", "/v1/ai-act/watermark", defaultWatermarkBody(content), &resp); err != nil {
 		return nil, err
 	}
-	return &resp, nil
+	return resp, nil
 }
 
-func (s *AiActService) Guidelines(ctx context.Context) (*models.GuidelinesResponse, error) {
-	var resp models.GuidelinesResponse
-	if err := s.t.Do(ctx, "GET", "/ai-act/guidelines", nil, &resp); err != nil {
+func (s *AiActService) HighImpactWatermark(ctx context.Context, content string) (map[string]any, error) {
+	var resp map[string]any
+	if err := s.t.Do(ctx, "POST", "/v1/ai-act/high-impact-watermark", defaultHighImpactBody(content), &resp); err != nil {
 		return nil, err
 	}
-	return &resp, nil
+	return resp, nil
 }
 
-func (s *AiActService) AuditLogs(ctx context.Context, params models.ListParams) (*models.PaginatedResponse[models.AuditLog], error) {
-	var resp models.PaginatedResponse[models.AuditLog]
-	path := buildPath("/ai-act/audit-logs", params.ToQuery())
-	if err := s.t.Do(ctx, "GET", path, nil, &resp); err != nil {
+func (s *AiActService) Verify(ctx context.Context, content string) (map[string]any, error) {
+	var resp map[string]any
+	if err := s.t.Do(ctx, "POST", "/v1/ai-act/verify", defaultVerifyBody(content), &resp); err != nil {
 		return nil, err
 	}
-	return &resp, nil
+	return resp, nil
 }
 
-// AuditLog retrieves a single audit log entry by ID.
-func (s *AiActService) AuditLog(ctx context.Context, id string) (*models.AuditLog, error) {
-	var resp models.AuditLog
-	if err := s.t.Do(ctx, "GET", fmt.Sprintf("/ai-act/audit-logs/%s", id), nil, &resp); err != nil {
+func (s *AiActService) GuardrailCheck(ctx context.Context, content string) (map[string]any, error) {
+	body := map[string]any{
+		"content":                content,
+		"content_type":           "text",
+		"check_prompt_injection": true,
+		"check_pii":              true,
+		"check_toxicity":         true,
+		"mask_pii":               false,
+		"use_llm":                false,
+	}
+	var resp map[string]any
+	if err := s.t.Do(ctx, "POST", "/v1/ai-act/guardrail-check", body, &resp); err != nil {
 		return nil, err
 	}
-	return &resp, nil
+	return resp, nil
+}
+
+func (s *AiActService) PiiDetect(ctx context.Context, content string) (map[string]any, error) {
+	body := map[string]any{"content": content, "mask": false, "entity_types": []string{}}
+	var resp map[string]any
+	if err := s.t.Do(ctx, "POST", "/v1/ai-act/pii-detect", body, &resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (s *AiActService) RiskAssess(ctx context.Context, systemDescription string) (map[string]any, error) {
+	body := map[string]any{
+		"system_name":           "smoke-test-system",
+		"model_type":            "text-generation",
+		"application_domains":   []string{"education"},
+		"compute_flops":         nil,
+		"handles_personal_data": false,
+		"system_description":    systemDescription,
+	}
+	var resp map[string]any
+	if err := s.t.Do(ctx, "POST", "/v1/ai-act/risk-assess", body, &resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (s *AiActService) Guidelines(ctx context.Context) (map[string]any, error) {
+	var resp map[string]any
+	if err := s.t.Do(ctx, "GET", "/v1/ai-act/guidelines", nil, &resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (s *AiActService) AuditLogs(ctx context.Context) (any, error) {
+	var resp any
+	if err := s.t.Do(ctx, "GET", "/v1/ai-act/audit-logs", nil, &resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
 }

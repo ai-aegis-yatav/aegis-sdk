@@ -11,7 +11,7 @@ import java.util.Map;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SafetyCheckRequest {
 
-    @JsonProperty("content")
+    @JsonProperty("text")
     private String content;
 
     @JsonProperty("categories")

@@ -4,55 +4,52 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from aegis.models.safety import SafetyCategory, SafetyCheckRequest, SafetyCheckResponse
 from aegis.resources._base import AsyncResource, SyncResource
+
+
+def _to_text(item: Any) -> str:
+    if isinstance(item, str):
+        return item
+    if isinstance(item, dict):
+        return item.get("text") or item.get("content") or ""
+    return getattr(item, "text", None) or getattr(item, "content", None) or ""
 
 
 class SyncSafety(SyncResource):
 
-    def check(self, content: str, **kwargs: Any) -> SafetyCheckResponse:
-        req = SafetyCheckRequest(content=content, **kwargs)
-        data = self._post("/v2/safety/check", json=req.model_dump(exclude_none=True))
-        return SafetyCheckResponse.model_validate(data)
+    def check(self, content: str, **kwargs: Any) -> Dict[str, Any]:
+        return self._post("/v2/safety/check", json={"text": content, **kwargs})
 
-    def check_batch(self, requests: List[SafetyCheckRequest]) -> List[SafetyCheckResponse]:
-        data = self._post(
+    def check_batch(self, requests: List[Any]) -> Dict[str, Any]:
+        return self._post(
             "/v2/safety/check/batch",
-            json={"requests": [r.model_dump(exclude_none=True) for r in requests]},
+            json={"texts": [_to_text(r) for r in requests]},
         )
-        items = data if isinstance(data, list) else data.get("results", [])
-        return [SafetyCheckResponse.model_validate(item) for item in items]
 
-    def categories(self) -> List[SafetyCategory]:
+    def categories(self) -> List[Dict[str, Any]]:
         data = self._get("/v2/safety/categories")
-        items = data if isinstance(data, list) else data.get("categories", [])
-        return [SafetyCategory.model_validate(c) for c in items]
+        return data if isinstance(data, list) else data.get("categories", [])
 
     def backends(self) -> List[Dict[str, Any]]:
-        return self._get("/v2/safety/backends")
+        data = self._get("/v2/safety/backends")
+        return data if isinstance(data, list) else data.get("backends", [])
 
 
 class AsyncSafety(AsyncResource):
 
-    async def check(self, content: str, **kwargs: Any) -> SafetyCheckResponse:
-        req = SafetyCheckRequest(content=content, **kwargs)
-        data = await self._post("/v2/safety/check", json=req.model_dump(exclude_none=True))
-        return SafetyCheckResponse.model_validate(data)
+    async def check(self, content: str, **kwargs: Any) -> Dict[str, Any]:
+        return await self._post("/v2/safety/check", json={"text": content, **kwargs})
 
-    async def check_batch(
-        self, requests: List[SafetyCheckRequest]
-    ) -> List[SafetyCheckResponse]:
-        data = await self._post(
+    async def check_batch(self, requests: List[Any]) -> Dict[str, Any]:
+        return await self._post(
             "/v2/safety/check/batch",
-            json={"requests": [r.model_dump(exclude_none=True) for r in requests]},
+            json={"texts": [_to_text(r) for r in requests]},
         )
-        items = data if isinstance(data, list) else data.get("results", [])
-        return [SafetyCheckResponse.model_validate(item) for item in items]
 
-    async def categories(self) -> List[SafetyCategory]:
+    async def categories(self) -> List[Dict[str, Any]]:
         data = await self._get("/v2/safety/categories")
-        items = data if isinstance(data, list) else data.get("categories", [])
-        return [SafetyCategory.model_validate(c) for c in items]
+        return data if isinstance(data, list) else data.get("categories", [])
 
     async def backends(self) -> List[Dict[str, Any]]:
-        return await self._get("/v2/safety/backends")
+        data = await self._get("/v2/safety/backends")
+        return data if isinstance(data, list) else data.get("backends", [])

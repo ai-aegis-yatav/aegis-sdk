@@ -13,7 +13,7 @@ type OpsService struct {
 
 func (s *OpsService) CiGate(ctx context.Context, req models.CiGateRequest) (*models.CiGateResponse, error) {
 	var resp models.CiGateResponse
-	if err := s.t.Do(ctx, "POST", "/ops/ci-gate", req, &resp); err != nil {
+	if err := s.t.Do(ctx, "POST", "/v1/ops/ci-gate", req, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -21,7 +21,7 @@ func (s *OpsService) CiGate(ctx context.Context, req models.CiGateRequest) (*mod
 
 func (s *OpsService) Benchmark(ctx context.Context, req models.BenchmarkRequest) (*models.BenchmarkResponse, error) {
 	var resp models.BenchmarkResponse
-	if err := s.t.Do(ctx, "POST", "/ops/benchmark", req, &resp); err != nil {
+	if err := s.t.Do(ctx, "POST", "/v1/ops/benchmark", req, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -29,7 +29,7 @@ func (s *OpsService) Benchmark(ctx context.Context, req models.BenchmarkRequest)
 
 func (s *OpsService) GetThresholds(ctx context.Context) (*models.ThresholdsConfig, error) {
 	var resp models.ThresholdsConfig
-	if err := s.t.Do(ctx, "GET", "/ops/thresholds", nil, &resp); err != nil {
+	if err := s.t.Do(ctx, "GET", "/v1/ops/thresholds", nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -37,7 +37,7 @@ func (s *OpsService) GetThresholds(ctx context.Context) (*models.ThresholdsConfi
 
 func (s *OpsService) SetThresholds(ctx context.Context, req models.ThresholdsConfig) (*models.ThresholdsConfig, error) {
 	var resp models.ThresholdsConfig
-	if err := s.t.Do(ctx, "PUT", "/ops/thresholds", req, &resp); err != nil {
+	if err := s.t.Do(ctx, "PUT", "/v1/ops/thresholds", req, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -45,7 +45,7 @@ func (s *OpsService) SetThresholds(ctx context.Context, req models.ThresholdsCon
 
 func (s *OpsService) RedteamStats(ctx context.Context) (*models.RedteamStats, error) {
 	var resp models.RedteamStats
-	if err := s.t.Do(ctx, "GET", "/ops/redteam/stats", nil, &resp); err != nil {
+	if err := s.t.Do(ctx, "GET", "/v1/ops/redteam/stats", nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -53,7 +53,7 @@ func (s *OpsService) RedteamStats(ctx context.Context) (*models.RedteamStats, er
 
 func (s *OpsService) AttackLibrary(ctx context.Context, params models.ListParams) (*models.PaginatedResponse[models.AttackEntry], error) {
 	var resp models.PaginatedResponse[models.AttackEntry]
-	path := buildPath("/ops/redteam/attacks", params.ToQuery())
+	path := buildPath("/v1/ops/redteam/attacks", params.ToQuery())
 	if err := s.t.Do(ctx, "GET", path, nil, &resp); err != nil {
 		return nil, err
 	}

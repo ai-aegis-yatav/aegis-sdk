@@ -14,7 +14,7 @@ type EvidenceService struct {
 
 func (s *EvidenceService) Get(ctx context.Context, id string) (*models.Evidence, error) {
 	var resp models.Evidence
-	if err := s.t.Do(ctx, "GET", fmt.Sprintf("/evidence/%s", id), nil, &resp); err != nil {
+	if err := s.t.Do(ctx, "GET", fmt.Sprintf("/v1/evidence/%s", id), nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -22,7 +22,7 @@ func (s *EvidenceService) Get(ctx context.Context, id string) (*models.Evidence,
 
 func (s *EvidenceService) List(ctx context.Context, params models.ListParams) (*models.PaginatedResponse[models.Evidence], error) {
 	var resp models.PaginatedResponse[models.Evidence]
-	path := buildPath("/evidence", params.ToQuery())
+	path := buildPath("/v1/evidence", params.ToQuery())
 	if err := s.t.Do(ctx, "GET", path, nil, &resp); err != nil {
 		return nil, err
 	}
@@ -31,7 +31,7 @@ func (s *EvidenceService) List(ctx context.Context, params models.ListParams) (*
 
 func (s *EvidenceService) Verify(ctx context.Context, id string) (*models.Evidence, error) {
 	var resp models.Evidence
-	if err := s.t.Do(ctx, "POST", fmt.Sprintf("/evidence/%s/verify", id), nil, &resp); err != nil {
+	if err := s.t.Do(ctx, "POST", fmt.Sprintf("/v1/evidence/%s/verify", id), nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -39,7 +39,7 @@ func (s *EvidenceService) Verify(ctx context.Context, id string) (*models.Eviden
 
 func (s *EvidenceService) ForJudgment(ctx context.Context, judgmentID string) ([]models.Evidence, error) {
 	var resp []models.Evidence
-	if err := s.t.Do(ctx, "GET", fmt.Sprintf("/judge/%s/evidence", judgmentID), nil, &resp); err != nil {
+	if err := s.t.Do(ctx, "GET", fmt.Sprintf("/v1/judge/%s/evidence", judgmentID), nil, &resp); err != nil {
 		return nil, err
 	}
 	return resp, nil

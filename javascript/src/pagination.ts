@@ -31,21 +31,33 @@ export class Paginator<T> implements AsyncIterable<T> {
     return this._total;
   }
 
+  private extractItems(data: any): T[] {
+    if (Array.isArray(data)) return data;
+    if (!data || typeof data !== "object") return [];
+    if (Array.isArray(data.items)) return data.items;
+    for (const key of [
+      "results", "data", "events", "campaigns", "rules",
+      "judgments", "escalations", "evidence", "api_keys", "templates",
+    ]) {
+      if (Array.isArray(data[key])) return data[key];
+    }
+    return [];
+  }
+
   async *[Symbol.asyncIterator](): AsyncIterator<T> {
     while (!this.exhausted) {
-      const data = await this.transport.request<PageResult<T>>({
+      const data = await this.transport.request<any>({
         method: "GET",
         path: this.path,
         params: { ...this.params, page: this.currentPage },
       });
 
-      this._total = data.total;
-      for (const item of data.items) {
-        yield item;
-      }
+      this._total = data?.total;
+      const items = this.extractItems(data);
+      for (const item of items) yield item;
 
       const limit = (this.params.limit as number) ?? 20;
-      if (!data.items.length || data.items.length < limit || data.has_more === false) {
+      if (!items.length || items.length < limit || data?.has_more === false) {
         this.exhausted = true;
       }
       this.currentPage++;

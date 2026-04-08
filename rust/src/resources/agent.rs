@@ -54,14 +54,22 @@ impl AgentResource {
     }
 
     pub async fn detect_tool_disguise(&self, text: &str) -> Result<serde_json::Value> {
-        let body = serde_json::json!({ "content": text });
+        let body = serde_json::json!({
+            "tool_invocation": { "tool_name": "unknown", "arguments": { "input": text } },
+            "previous_invocations": [],
+            "tool_catalog": [],
+        });
         self.transport
             .request(Method::POST, "/v3/agent/tool-disguise", Some(&body))
             .await
     }
 
     pub async fn detect_privilege_escalation(&self, text: &str) -> Result<serde_json::Value> {
-        let body = serde_json::json!({ "content": text });
+        let body = serde_json::json!({
+            "current_permissions": [],
+            "requested_action": text,
+            "user_role": "user",
+        });
         self.transport
             .request(
                 Method::POST,

@@ -5,50 +5,57 @@ import (
 	"fmt"
 
 	"github.com/ai-aegis-yatav/aegis-sdk/go/internal"
-	"github.com/ai-aegis-yatav/aegis-sdk/go/models"
 )
 
+// AdversaFlowService — V2 attack campaign tracking.
 type AdversaFlowService struct {
 	t *internal.Transport
 }
 
-func (s *AdversaFlowService) Campaigns(ctx context.Context, params models.ListParams) (*models.PaginatedResponse[models.Campaign], error) {
-	var resp models.PaginatedResponse[models.Campaign]
-	path := buildPath("/adversaflow/campaigns", params.ToQuery())
-	if err := s.t.Do(ctx, "GET", path, nil, &resp); err != nil {
-		return nil, err
-	}
-	return &resp, nil
-}
-
-func (s *AdversaFlowService) Tree(ctx context.Context, campaignID string) (*models.AttackTree, error) {
-	var resp models.AttackTree
-	if err := s.t.Do(ctx, "GET", fmt.Sprintf("/adversaflow/campaigns/%s/tree", campaignID), nil, &resp); err != nil {
-		return nil, err
-	}
-	return &resp, nil
-}
-
-func (s *AdversaFlowService) Trace(ctx context.Context, campaignID string) ([]models.TraceEntry, error) {
-	var resp []models.TraceEntry
-	if err := s.t.Do(ctx, "GET", fmt.Sprintf("/adversaflow/campaigns/%s/trace", campaignID), nil, &resp); err != nil {
+func (s *AdversaFlowService) Campaigns(ctx context.Context) (map[string]any, error) {
+	var resp map[string]any
+	if err := s.t.Do(ctx, "GET", "/v2/adversaflow/campaigns", nil, &resp); err != nil {
 		return nil, err
 	}
 	return resp, nil
 }
 
-func (s *AdversaFlowService) Stats(ctx context.Context) (*models.AdversaFlowStats, error) {
-	var resp models.AdversaFlowStats
-	if err := s.t.Do(ctx, "GET", "/adversaflow/stats", nil, &resp); err != nil {
+func (s *AdversaFlowService) Tree(ctx context.Context, campaignID string) (map[string]any, error) {
+	var resp map[string]any
+	if err := s.t.Do(ctx, "GET", fmt.Sprintf("/v2/adversaflow/tree/%s", campaignID), nil, &resp); err != nil {
 		return nil, err
 	}
-	return &resp, nil
+	return resp, nil
 }
 
-func (s *AdversaFlowService) Record(ctx context.Context, req models.RecordRequest) (*models.RecordResponse, error) {
-	var resp models.RecordResponse
-	if err := s.t.Do(ctx, "POST", "/adversaflow/record", req, &resp); err != nil {
+func (s *AdversaFlowService) Trace(ctx context.Context, campaignID, nodeID string) (map[string]any, error) {
+	var resp map[string]any
+	if err := s.t.Do(ctx, "GET", fmt.Sprintf("/v2/adversaflow/trace/%s/%s", campaignID, nodeID), nil, &resp); err != nil {
 		return nil, err
 	}
-	return &resp, nil
+	return resp, nil
+}
+
+func (s *AdversaFlowService) Stats(ctx context.Context, campaignID string) (map[string]any, error) {
+	var resp map[string]any
+	if err := s.t.Do(ctx, "GET", fmt.Sprintf("/v2/adversaflow/stats/%s", campaignID), nil, &resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (s *AdversaFlowService) Metrics(ctx context.Context, campaignID string) (map[string]any, error) {
+	var resp map[string]any
+	if err := s.t.Do(ctx, "GET", fmt.Sprintf("/v2/adversaflow/metrics/%s", campaignID), nil, &resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (s *AdversaFlowService) Record(ctx context.Context, body map[string]any) (map[string]any, error) {
+	var resp map[string]any
+	if err := s.t.Do(ctx, "POST", "/v2/adversaflow/record", body, &resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
 }

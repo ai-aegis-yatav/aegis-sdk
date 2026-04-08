@@ -1,45 +1,136 @@
-"""AI Act resource — V1 AI Act compliance endpoints."""
+"""AI Act resource — V1 AI Act compliance endpoints.
+
+The watermark / verify endpoints expect rich structured payloads (binary
+content as ``u8[]``, ``ai_model``, ``service_provider``, ``risk_level``,
+``watermark_config`` …). The smoke-test friendly methods below build minimal
+defaults; pass extra fields via kwargs to override.
+"""
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
-from aegis.models.ai_act import (
-    ComplianceVerifyRequest,
-    ComplianceVerifyResponse,
-    GuardrailCheckRequest,
-    GuardrailCheckResponse,
-    PiiDetectRequest,
-    PiiDetectResponse,
-    RiskAssessRequest,
-    RiskAssessResponse,
-    WatermarkRequest,
-    WatermarkResponse,
-)
 from aegis.resources._base import AsyncResource, SyncResource
+
+
+def _bytes_of(content: str) -> List[int]:
+    """Server expects ``content: u8[]`` for watermark/verify."""
+    return list(content.encode("utf-8"))
+
+
+def _watermark_body(content: str, **overrides: Any) -> Dict[str, Any]:
+    body: Dict[str, Any] = {
+        "content_type": "text",
+        "content": _bytes_of(content),
+        "ai_model": {
+            "model_name": "smoke-test",
+            "model_version": "1.0",
+            "model_type": "text-generation",
+            "provider": "aegis",
+        },
+        "service_provider": {
+            "provider_name": "smoke-test",
+            "provider_id": "aegis-smoke",
+        },
+        "risk_level": "limited",
+        "watermark_config": {
+            "method": "invisible",
+            "strength": 0.5,
+        },
+    }
+    body.update(overrides)
+    return body
+
+
+def _high_impact_body(content: str, **overrides: Any) -> Dict[str, Any]:
+    body: Dict[str, Any] = {
+        "domain": "education",
+        "content_type": "text",
+        "content": _bytes_of(content),
+        "ai_model": {
+            "model_name": "smoke-test",
+            "model_version": "1.0",
+            "model_type": "text-generation",
+            "provider": "aegis",
+        },
+        "risk_assessment": {
+            "risk_level": "high",
+            "impact_areas": ["education"],
+        },
+        "watermark_config": {
+            "method": "invisible",
+            "strength": 0.9,
+            "high_impact": True,
+        },
+    }
+    body.update(overrides)
+    return body
+
+
+def _verify_body(content: str, **overrides: Any) -> Dict[str, Any]:
+    body: Dict[str, Any] = {
+        "content_type": "text",
+        "content": _bytes_of(content),
+        "check_tampering": True,
+        "include_provenance": False,
+    }
+    body.update(overrides)
+    return body
+
+
+def _guardrail_body(content: str, **overrides: Any) -> Dict[str, Any]:
+    body: Dict[str, Any] = {
+        "content": content,
+        "content_type": "text",
+        "check_prompt_injection": True,
+        "check_pii": True,
+        "check_toxicity": True,
+        "mask_pii": False,
+        "use_llm": False,
+    }
+    body.update(overrides)
+    return body
+
+
+def _pii_body(content: str, **overrides: Any) -> Dict[str, Any]:
+    body: Dict[str, Any] = {
+        "content": content,
+        "mask": False,
+        "entity_types": [],
+    }
+    body.update(overrides)
+    return body
+
+
+def _risk_assess_body(system_description: str, **overrides: Any) -> Dict[str, Any]:
+    body: Dict[str, Any] = {
+        "system_name": overrides.pop("system_name", "smoke-test-system"),
+        "model_type": overrides.pop("model_type", "text-generation"),
+        "application_domains": overrides.pop("application_domains", ["education"]),
+        "compute_flops": overrides.pop("compute_flops", None),
+        "handles_personal_data": overrides.pop("handles_personal_data", False),
+    }
+    # Keep system_description for forward-compat callers.
+    body["system_description"] = system_description
+    body.update(overrides)
+    return body
 
 
 class SyncAiAct(SyncResource):
 
-    def watermark(self, content: str, **kwargs: Any) -> WatermarkResponse:
-        req = WatermarkRequest(content=content, **kwargs)
-        data = self._post("/v1/ai-act/watermark", json=req.model_dump(exclude_none=True))
-        return WatermarkResponse.model_validate(data)
+    def watermark(self, content: str, **kwargs: Any) -> Dict[str, Any]:
+        return self._post("/v1/ai-act/watermark", json=_watermark_body(content, **kwargs))
 
-    def high_impact_watermark(self, content: str, **kwargs: Any) -> WatermarkResponse:
-        req = WatermarkRequest(content=content, **kwargs)
-        data = self._post(
-            "/v1/ai-act/high-impact/watermark", json=req.model_dump(exclude_none=True)
+    def high_impact_watermark(self, content: str, **kwargs: Any) -> Dict[str, Any]:
+        return self._post(
+            "/v1/ai-act/high-impact-watermark", json=_high_impact_body(content, **kwargs)
         )
-        return WatermarkResponse.model_validate(data)
 
     def deepfake_label(self, **kwargs: Any) -> Dict[str, Any]:
-        return self._post("/v1/ai-act/deepfake/label", json=kwargs)
+        return self._post("/v1/ai-act/deepfake-label", json=kwargs)
 
-    def verify(self, content: str, **kwargs: Any) -> ComplianceVerifyResponse:
-        req = ComplianceVerifyRequest(content=content, **kwargs)
-        data = self._post("/v1/ai-act/verify", json=req.model_dump(exclude_none=True))
-        return ComplianceVerifyResponse.model_validate(data)
+    def verify(self, content: str, **kwargs: Any) -> Dict[str, Any]:
+        return self._post("/v1/ai-act/verify", json=_verify_body(content, **kwargs))
 
     def report_violation(self, **kwargs: Any) -> Dict[str, Any]:
         return self._post("/v1/ai-act/report-violation", json=kwargs)
@@ -47,50 +138,40 @@ class SyncAiAct(SyncResource):
     def guidelines(self) -> Dict[str, Any]:
         return self._get("/v1/ai-act/guidelines")
 
-    def guardrail_check(self, content: str, **kwargs: Any) -> GuardrailCheckResponse:
-        req = GuardrailCheckRequest(content=content, **kwargs)
-        data = self._post("/v1/ai-act/guardrail/check", json=req.model_dump(exclude_none=True))
-        return GuardrailCheckResponse.model_validate(data)
+    def guardrail_check(self, content: str, **kwargs: Any) -> Dict[str, Any]:
+        return self._post(
+            "/v1/ai-act/guardrail-check", json=_guardrail_body(content, **kwargs)
+        )
 
-    def pii_detect(self, content: str, **kwargs: Any) -> PiiDetectResponse:
-        req = PiiDetectRequest(content=content, **kwargs)
-        data = self._post("/v1/ai-act/pii/detect", json=req.model_dump(exclude_none=True))
-        return PiiDetectResponse.model_validate(data)
+    def pii_detect(self, content: str, **kwargs: Any) -> Dict[str, Any]:
+        return self._post("/v1/ai-act/pii-detect", json=_pii_body(content, **kwargs))
 
-    def risk_assess(self, system_description: str, **kwargs: Any) -> RiskAssessResponse:
-        req = RiskAssessRequest(system_description=system_description, **kwargs)
-        data = self._post("/v1/ai-act/risk/assess", json=req.model_dump(exclude_none=True))
-        return RiskAssessResponse.model_validate(data)
+    def risk_assess(self, system_description: str, **kwargs: Any) -> Dict[str, Any]:
+        return self._post(
+            "/v1/ai-act/risk-assess", json=_risk_assess_body(system_description, **kwargs)
+        )
 
     def audit_logs(self, **params: Any) -> Dict[str, Any]:
-        return self._get("/v1/ai-act/audit/logs", params=params)
+        return self._get("/v1/ai-act/audit-logs", params=params)
 
 
 class AsyncAiAct(AsyncResource):
 
-    async def watermark(self, content: str, **kwargs: Any) -> WatermarkResponse:
-        req = WatermarkRequest(content=content, **kwargs)
-        data = await self._post(
-            "/v1/ai-act/watermark", json=req.model_dump(exclude_none=True)
+    async def watermark(self, content: str, **kwargs: Any) -> Dict[str, Any]:
+        return await self._post(
+            "/v1/ai-act/watermark", json=_watermark_body(content, **kwargs)
         )
-        return WatermarkResponse.model_validate(data)
 
-    async def high_impact_watermark(self, content: str, **kwargs: Any) -> WatermarkResponse:
-        req = WatermarkRequest(content=content, **kwargs)
-        data = await self._post(
-            "/v1/ai-act/high-impact/watermark", json=req.model_dump(exclude_none=True)
+    async def high_impact_watermark(self, content: str, **kwargs: Any) -> Dict[str, Any]:
+        return await self._post(
+            "/v1/ai-act/high-impact-watermark", json=_high_impact_body(content, **kwargs)
         )
-        return WatermarkResponse.model_validate(data)
 
     async def deepfake_label(self, **kwargs: Any) -> Dict[str, Any]:
-        return await self._post("/v1/ai-act/deepfake/label", json=kwargs)
+        return await self._post("/v1/ai-act/deepfake-label", json=kwargs)
 
-    async def verify(self, content: str, **kwargs: Any) -> ComplianceVerifyResponse:
-        req = ComplianceVerifyRequest(content=content, **kwargs)
-        data = await self._post(
-            "/v1/ai-act/verify", json=req.model_dump(exclude_none=True)
-        )
-        return ComplianceVerifyResponse.model_validate(data)
+    async def verify(self, content: str, **kwargs: Any) -> Dict[str, Any]:
+        return await self._post("/v1/ai-act/verify", json=_verify_body(content, **kwargs))
 
     async def report_violation(self, **kwargs: Any) -> Dict[str, Any]:
         return await self._post("/v1/ai-act/report-violation", json=kwargs)
@@ -98,26 +179,20 @@ class AsyncAiAct(AsyncResource):
     async def guidelines(self) -> Dict[str, Any]:
         return await self._get("/v1/ai-act/guidelines")
 
-    async def guardrail_check(self, content: str, **kwargs: Any) -> GuardrailCheckResponse:
-        req = GuardrailCheckRequest(content=content, **kwargs)
-        data = await self._post(
-            "/v1/ai-act/guardrail/check", json=req.model_dump(exclude_none=True)
+    async def guardrail_check(self, content: str, **kwargs: Any) -> Dict[str, Any]:
+        return await self._post(
+            "/v1/ai-act/guardrail-check", json=_guardrail_body(content, **kwargs)
         )
-        return GuardrailCheckResponse.model_validate(data)
 
-    async def pii_detect(self, content: str, **kwargs: Any) -> PiiDetectResponse:
-        req = PiiDetectRequest(content=content, **kwargs)
-        data = await self._post(
-            "/v1/ai-act/pii/detect", json=req.model_dump(exclude_none=True)
+    async def pii_detect(self, content: str, **kwargs: Any) -> Dict[str, Any]:
+        return await self._post(
+            "/v1/ai-act/pii-detect", json=_pii_body(content, **kwargs)
         )
-        return PiiDetectResponse.model_validate(data)
 
-    async def risk_assess(self, system_description: str, **kwargs: Any) -> RiskAssessResponse:
-        req = RiskAssessRequest(system_description=system_description, **kwargs)
-        data = await self._post(
-            "/v1/ai-act/risk/assess", json=req.model_dump(exclude_none=True)
+    async def risk_assess(self, system_description: str, **kwargs: Any) -> Dict[str, Any]:
+        return await self._post(
+            "/v1/ai-act/risk-assess", json=_risk_assess_body(system_description, **kwargs)
         )
-        return RiskAssessResponse.model_validate(data)
 
     async def audit_logs(self, **params: Any) -> Dict[str, Any]:
-        return await self._get("/v1/ai-act/audit/logs", params=params)
+        return await self._get("/v1/ai-act/audit-logs", params=params)

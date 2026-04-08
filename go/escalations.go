@@ -14,7 +14,7 @@ type EscalationsService struct {
 
 func (s *EscalationsService) Create(ctx context.Context, req models.EscalationCreateRequest) (*models.Escalation, error) {
 	var resp models.Escalation
-	if err := s.t.Do(ctx, "POST", "/escalations", req, &resp); err != nil {
+	if err := s.t.Do(ctx, "POST", "/v1/escalations", req, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -22,7 +22,7 @@ func (s *EscalationsService) Create(ctx context.Context, req models.EscalationCr
 
 func (s *EscalationsService) Get(ctx context.Context, id string) (*models.Escalation, error) {
 	var resp models.Escalation
-	if err := s.t.Do(ctx, "GET", fmt.Sprintf("/escalations/%s", id), nil, &resp); err != nil {
+	if err := s.t.Do(ctx, "GET", fmt.Sprintf("/v1/escalations/%s", id), nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -30,7 +30,7 @@ func (s *EscalationsService) Get(ctx context.Context, id string) (*models.Escala
 
 func (s *EscalationsService) List(ctx context.Context, params models.ListParams) (*models.PaginatedResponse[models.Escalation], error) {
 	var resp models.PaginatedResponse[models.Escalation]
-	path := buildPath("/escalations", params.ToQuery())
+	path := buildPath("/v1/escalations", params.ToQuery())
 	if err := s.t.Do(ctx, "GET", path, nil, &resp); err != nil {
 		return nil, err
 	}
@@ -39,7 +39,7 @@ func (s *EscalationsService) List(ctx context.Context, params models.ListParams)
 
 func (s *EscalationsService) Resolve(ctx context.Context, id string, req models.EscalationResolveRequest) (*models.Escalation, error) {
 	var resp models.Escalation
-	if err := s.t.Do(ctx, "POST", fmt.Sprintf("/escalations/%s/resolve", id), req, &resp); err != nil {
+	if err := s.t.Do(ctx, "POST", fmt.Sprintf("/v1/escalations/%s/resolve", id), req, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -47,7 +47,7 @@ func (s *EscalationsService) Resolve(ctx context.Context, id string, req models.
 
 func (s *EscalationsService) Assign(ctx context.Context, id string, req models.EscalationAssignRequest) (*models.Escalation, error) {
 	var resp models.Escalation
-	if err := s.t.Do(ctx, "POST", fmt.Sprintf("/escalations/%s/assign", id), req, &resp); err != nil {
+	if err := s.t.Do(ctx, "POST", fmt.Sprintf("/v1/escalations/%s/assign", id), req, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -55,7 +55,7 @@ func (s *EscalationsService) Assign(ctx context.Context, id string, req models.E
 
 func (s *EscalationsService) Claim(ctx context.Context, id string) (*models.Escalation, error) {
 	var resp models.Escalation
-	if err := s.t.Do(ctx, "POST", fmt.Sprintf("/escalations/%s/claim", id), nil, &resp); err != nil {
+	if err := s.t.Do(ctx, "POST", fmt.Sprintf("/v1/escalations/%s/claim", id), nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -63,7 +63,7 @@ func (s *EscalationsService) Claim(ctx context.Context, id string) (*models.Esca
 
 func (s *EscalationsService) Stats(ctx context.Context) (*models.EscalationStats, error) {
 	var resp models.EscalationStats
-	if err := s.t.Do(ctx, "GET", "/escalations/stats", nil, &resp); err != nil {
+	if err := s.t.Do(ctx, "GET", "/v1/escalations/stats", nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil

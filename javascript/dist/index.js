@@ -251,6 +251,26 @@ var Paginator = class {
   get total() {
     return this._total;
   }
+  extractItems(data) {
+    if (Array.isArray(data)) return data;
+    if (!data || typeof data !== "object") return [];
+    if (Array.isArray(data.items)) return data.items;
+    for (const key of [
+      "results",
+      "data",
+      "events",
+      "campaigns",
+      "rules",
+      "judgments",
+      "escalations",
+      "evidence",
+      "api_keys",
+      "templates"
+    ]) {
+      if (Array.isArray(data[key])) return data[key];
+    }
+    return [];
+  }
   async *[Symbol.asyncIterator]() {
     while (!this.exhausted) {
       const data = await this.transport.request({
@@ -258,12 +278,11 @@ var Paginator = class {
         path: this.path,
         params: { ...this.params, page: this.currentPage }
       });
-      this._total = data.total;
-      for (const item of data.items) {
-        yield item;
-      }
+      this._total = data?.total;
+      const items = this.extractItems(data);
+      for (const item of items) yield item;
       const limit = this.params.limit ?? 20;
-      if (!data.items.length || data.items.length < limit || data.has_more === false) {
+      if (!items.length || items.length < limit || data?.has_more === false) {
         this.exhausted = true;
       }
       this.currentPage++;
@@ -546,17 +565,17 @@ var ML = class {
   async health() {
     return this.t.request({ method: "GET", path: "/v1/ml/health" });
   }
-  async embed(req) {
-    return this.t.request({ method: "POST", path: "/v1/ml/embed", body: req });
+  async embed(text, model) {
+    return this.t.request({ method: "POST", path: "/v1/ml/embed", body: { text, ...model ? { model } : {} } });
   }
   async embedBatch(texts, model) {
-    return this.t.request({ method: "POST", path: "/v1/ml/embed/batch", body: { texts, model } });
+    return this.t.request({ method: "POST", path: "/v1/ml/embed/batch", body: { texts, ...model ? { model } : {} } });
   }
-  async classify(req) {
-    return this.t.request({ method: "POST", path: "/v1/ml/classify", body: req });
+  async classify(text, opts) {
+    return this.t.request({ method: "POST", path: "/v1/ml/classify", body: { text, ...opts } });
   }
-  async similarity(req) {
-    return this.t.request({ method: "POST", path: "/v1/ml/similarity", body: req });
+  async similarity(query, documents, opts) {
+    return this.t.request({ method: "POST", path: "/v1/ml/similarity", body: { query, ...documents ? { documents } : {}, ...opts } });
   }
 };
 var NLP = class {
@@ -565,58 +584,117 @@ var NLP = class {
   }
   t;
   async detectLanguage(content) {
-    return this.t.request({ method: "POST", path: "/v1/nlp/detect-language", body: { content } });
+    return this.t.request({ method: "POST", path: "/v1/nlp/detect-language", body: { text: content } });
   }
   async detectJailbreak(content) {
-    return this.t.request({ method: "POST", path: "/v1/nlp/detect-jailbreak", body: { content } });
+    return this.t.request({ method: "POST", path: "/v1/nlp/detect-jailbreak", body: { text: content } });
   }
   async detectHarmful(content) {
-    return this.t.request({ method: "POST", path: "/v1/nlp/detect-harmful", body: { content } });
+    return this.t.request({ method: "POST", path: "/v1/nlp/detect-harmful", body: { text: content } });
   }
 };
+function _bytesOf(s) {
+  return Array.from(new TextEncoder().encode(s));
+}
+function _watermarkBody(content, overrides) {
+  return {
+    content_type: "text",
+    content: _bytesOf(content),
+    ai_model: { model_name: "smoke-test", model_version: "1.0", model_type: "text-generation", provider: "aegis" },
+    service_provider: { provider_name: "smoke-test", provider_id: "aegis-smoke" },
+    risk_level: "limited",
+    watermark_config: { method: "invisible", strength: 0.5 },
+    ...overrides
+  };
+}
+function _highImpactBody(content, overrides) {
+  return {
+    domain: "education",
+    content_type: "text",
+    content: _bytesOf(content),
+    ai_model: { model_name: "smoke-test", model_version: "1.0", model_type: "text-generation", provider: "aegis" },
+    risk_assessment: { risk_level: "high", impact_areas: ["education"] },
+    watermark_config: { method: "invisible", strength: 0.9, high_impact: true },
+    ...overrides
+  };
+}
+function _verifyBody(content, overrides) {
+  return {
+    content_type: "text",
+    content: _bytesOf(content),
+    check_tampering: true,
+    include_provenance: false,
+    ...overrides
+  };
+}
 var AiAct = class {
   constructor(t) {
     this.t = t;
   }
   t;
-  async watermark(req) {
-    return this.t.request({ method: "POST", path: "/v1/ai-act/watermark", body: req });
+  async watermark(content, opts) {
+    return this.t.request({ method: "POST", path: "/v1/ai-act/watermark", body: _watermarkBody(content, opts) });
   }
-  async highImpactWatermark(req) {
-    return this.t.request({ method: "POST", path: "/v1/ai-act/high-impact/watermark", body: req });
+  async highImpactWatermark(content, opts) {
+    return this.t.request({ method: "POST", path: "/v1/ai-act/high-impact-watermark", body: _highImpactBody(content, opts) });
   }
   async deepfakeLabel(body) {
-    return this.t.request({ method: "POST", path: "/v1/ai-act/deepfake/label", body });
+    return this.t.request({ method: "POST", path: "/v1/ai-act/deepfake-label", body });
   }
-  async verify(content) {
-    return this.t.request({ method: "POST", path: "/v1/ai-act/verify", body: { content } });
+  async verify(content, opts) {
+    return this.t.request({ method: "POST", path: "/v1/ai-act/verify", body: _verifyBody(content, opts) });
   }
   async guidelines() {
     return this.t.request({ method: "GET", path: "/v1/ai-act/guidelines" });
   }
-  async guardrailCheck(content) {
-    return this.t.request({ method: "POST", path: "/v1/ai-act/guardrail/check", body: { content } });
+  async guardrailCheck(content, opts) {
+    return this.t.request({
+      method: "POST",
+      path: "/v1/ai-act/guardrail-check",
+      body: { content, content_type: "text", check_prompt_injection: true, check_pii: true, check_toxicity: true, mask_pii: false, use_llm: false, ...opts }
+    });
   }
-  async piiDetect(req) {
-    return this.t.request({ method: "POST", path: "/v1/ai-act/pii/detect", body: req });
+  async piiDetect(content, opts) {
+    return this.t.request({
+      method: "POST",
+      path: "/v1/ai-act/pii-detect",
+      body: { content, mask: opts?.mask ?? false, entity_types: opts?.entity_types ?? [] }
+    });
   }
-  async riskAssess(systemDescription, domain) {
-    return this.t.request({ method: "POST", path: "/v1/ai-act/risk/assess", body: { system_description: systemDescription, domain } });
+  async riskAssess(systemDescription, opts) {
+    return this.t.request({
+      method: "POST",
+      path: "/v1/ai-act/risk-assess",
+      body: {
+        system_name: opts?.system_name ?? "smoke-test-system",
+        model_type: opts?.model_type ?? "text-generation",
+        application_domains: opts?.application_domains ?? ["education"],
+        compute_flops: opts?.compute_flops ?? null,
+        handles_personal_data: opts?.handles_personal_data ?? false,
+        system_description: systemDescription,
+        ...opts
+      }
+    });
   }
   async auditLogs(params) {
-    return this.t.request({ method: "GET", path: "/v1/ai-act/audit/logs", params });
+    return this.t.request({ method: "GET", path: "/v1/ai-act/audit-logs", params });
   }
 };
+function _toText(item) {
+  if (typeof item === "string") return item;
+  if (item && typeof item === "object") return item.text ?? item.content ?? "";
+  return "";
+}
 var Classify = class {
   constructor(t) {
     this.t = t;
   }
   t;
-  async classify(req) {
-    return this.t.request({ method: "POST", path: "/v2/classify", body: req });
+  async classify(content, opts) {
+    return this.t.request({ method: "POST", path: "/v2/classify", body: { text: content, ...opts } });
   }
   async batch(requests) {
-    return this.t.request({ method: "POST", path: "/v2/classify/batch", body: { requests } });
+    return this.t.request({ method: "POST", path: "/v2/classify/batch", body: { texts: requests.map(_toText) } });
   }
   async categories() {
     return this.t.request({ method: "GET", path: "/v2/classify/categories" });
@@ -627,11 +705,11 @@ var Jailbreak = class {
     this.t = t;
   }
   t;
-  async detect(req) {
-    return this.t.request({ method: "POST", path: "/v2/jailbreak/detect", body: req });
+  async detect(content, opts) {
+    return this.t.request({ method: "POST", path: "/v2/jailbreak/detect", body: { text: content, ...opts } });
   }
   async detectBatch(requests) {
-    return this.t.request({ method: "POST", path: "/v2/jailbreak/detect/batch", body: { requests } });
+    return this.t.request({ method: "POST", path: "/v2/jailbreak/detect/batch", body: { texts: requests.map(_toText) } });
   }
   async types() {
     return this.t.request({ method: "GET", path: "/v2/jailbreak/types" });
@@ -642,11 +720,11 @@ var Safety = class {
     this.t = t;
   }
   t;
-  async check(req) {
-    return this.t.request({ method: "POST", path: "/v2/safety/check", body: req });
+  async check(content, opts) {
+    return this.t.request({ method: "POST", path: "/v2/safety/check", body: { text: content, ...opts } });
   }
   async checkBatch(requests) {
-    return this.t.request({ method: "POST", path: "/v2/safety/check/batch", body: { requests } });
+    return this.t.request({ method: "POST", path: "/v2/safety/check/batch", body: { texts: requests.map(_toText) } });
   }
   async categories() {
     return this.t.request({ method: "GET", path: "/v2/safety/categories" });
@@ -666,14 +744,14 @@ var Defense = class {
   async enableLayer(layerName) {
     return this.t.request({ method: "POST", path: `/v2/defense/paladin/layer/${layerName}/enable` });
   }
-  async trustValidate(req) {
-    return this.t.request({ method: "POST", path: "/v2/defense/trust/validate", body: req });
+  async trustValidate(content, opts) {
+    return this.t.request({ method: "POST", path: "/v2/defense/trust/validate", body: { content, ...opts } });
   }
   async trustProfile() {
     return this.t.request({ method: "GET", path: "/v2/defense/trust/profile" });
   }
-  async ragDetect(req) {
-    return this.t.request({ method: "POST", path: "/v2/defense/rag/detect", body: req });
+  async ragDetect(query, documents, opts) {
+    return this.t.request({ method: "POST", path: "/v2/defense/rag/detect", body: { content: query, ...documents ? { documents } : {}, ...opts } });
   }
   async ragSecureQuery(body) {
     return this.t.request({ method: "POST", path: "/v2/defense/rag/secure-query", body });
@@ -696,29 +774,29 @@ var Advanced = class {
     this.t = t;
   }
   t;
-  async detect(req) {
-    return this.t.request({ method: "POST", path: "/v2/advanced/detect", body: req });
+  async detect(content) {
+    return this.t.request({ method: "POST", path: "/v2/advanced/detect", body: { text: content } });
   }
   async hybridWeb(content) {
-    return this.t.request({ method: "POST", path: "/v2/advanced/hybrid-web", body: { content } });
+    return this.t.request({ method: "POST", path: "/v2/advanced/hybrid-web", body: { text: content } });
   }
   async vsh(content) {
-    return this.t.request({ method: "POST", path: "/v2/advanced/vsh", body: { content } });
+    return this.t.request({ method: "POST", path: "/v2/advanced/vsh", body: { text: content } });
   }
   async fewShot(content) {
-    return this.t.request({ method: "POST", path: "/v2/advanced/few-shot", body: { content } });
+    return this.t.request({ method: "POST", path: "/v2/advanced/few-shot", body: { text: content } });
   }
   async cot(content) {
-    return this.t.request({ method: "POST", path: "/v2/advanced/cot", body: { content } });
+    return this.t.request({ method: "POST", path: "/v2/advanced/cot", body: { text: content } });
   }
   async acoustic(content) {
-    return this.t.request({ method: "POST", path: "/v2/advanced/acoustic", body: { content } });
+    return this.t.request({ method: "POST", path: "/v2/advanced/acoustic", body: { text: content } });
   }
   async contextConfusion(content) {
-    return this.t.request({ method: "POST", path: "/v2/advanced/context-confusion", body: { content } });
+    return this.t.request({ method: "POST", path: "/v2/advanced/context-confusion", body: { text: content } });
   }
   async infoExtraction(content) {
-    return this.t.request({ method: "POST", path: "/v2/advanced/info-extraction", body: { content } });
+    return this.t.request({ method: "POST", path: "/v2/advanced/info-extraction", body: { text: content } });
   }
 };
 var AdversaFlow = class {
@@ -729,14 +807,17 @@ var AdversaFlow = class {
   campaigns(opts = {}) {
     return new Paginator(this.t, "/v2/adversaflow/campaigns", { page: opts.page ?? 1, limit: opts.limit ?? 20 });
   }
-  async tree() {
-    return this.t.request({ method: "GET", path: "/v2/adversaflow/tree" });
+  async tree(campaignId) {
+    return this.t.request({ method: "GET", path: `/v2/adversaflow/tree/${campaignId}` });
   }
-  async trace(campaignId) {
-    return this.t.request({ method: "GET", path: `/v2/adversaflow/trace/${campaignId}` });
+  async trace(campaignId, nodeId) {
+    return this.t.request({ method: "GET", path: `/v2/adversaflow/trace/${campaignId}/${nodeId}` });
   }
   async stats(campaignId) {
     return this.t.request({ method: "GET", path: `/v2/adversaflow/stats/${campaignId}` });
+  }
+  async metrics(campaignId) {
+    return this.t.request({ method: "GET", path: `/v2/adversaflow/metrics/${campaignId}` });
   }
   async record(body) {
     return this.t.request({ method: "POST", path: "/v2/adversaflow/record", body });
@@ -748,19 +829,19 @@ var GuardNet = class {
   }
   t;
   async analyze(content, opts) {
-    return this.t.request({ method: "POST", path: "/v3/defense/guardnet", body: { content, ...opts } });
+    return this.t.request({ method: "POST", path: "/v3/defense/guardnet", body: { text: content, ...opts } });
   }
   async jbshield(content, opts) {
-    return this.t.request({ method: "POST", path: "/v3/defense/jbshield", body: { content, ...opts } });
+    return this.t.request({ method: "POST", path: "/v3/defense/jbshield", body: { text: content, ...opts } });
   }
   async ccfc(content, opts) {
-    return this.t.request({ method: "POST", path: "/v3/defense/ccfc", body: { content, ...opts } });
+    return this.t.request({ method: "POST", path: "/v3/defense/ccfc", body: { text: content, ...opts } });
   }
   async muli(content, opts) {
-    return this.t.request({ method: "POST", path: "/v3/defense/muli", body: { content, ...opts } });
+    return this.t.request({ method: "POST", path: "/v3/defense/muli", body: { text: content, ...opts } });
   }
   async unified(content, opts) {
-    return this.t.request({ method: "POST", path: "/v3/defense/unified", body: { content, ...opts } });
+    return this.t.request({ method: "POST", path: "/v3/defense/unified", body: { text: content, ...opts } });
   }
 };
 var Agent = class {
@@ -768,11 +849,22 @@ var Agent = class {
     this.t = t;
   }
   t;
-  async scan(req) {
-    return this.t.request({ method: "POST", path: "/v3/agent/scan", body: req });
+  async scan(prompt, opts) {
+    return this.t.request({
+      method: "POST",
+      path: "/v3/agent/scan",
+      body: {
+        prompt,
+        external_data: opts?.external_data ?? [],
+        session_id: opts?.session_id ?? (globalThis.crypto?.randomUUID?.() ?? "smoke-session"),
+        user_id: opts?.user_id ?? "sdk-smoke",
+        ...opts?.agent_type ? { agent_type: opts.agent_type } : {},
+        ...opts?.context ? { context: opts.context } : {}
+      }
+    });
   }
-  async toolchain(req) {
-    return this.t.request({ method: "POST", path: "/v3/agent/toolchain", body: req });
+  async toolchain(tools, opts) {
+    return this.t.request({ method: "POST", path: "/v3/agent/toolchain", body: { tools, ...opts } });
   }
   async memoryPoisoning(body) {
     return this.t.request({ method: "POST", path: "/v3/agent/memory-poisoning", body });
@@ -784,22 +876,38 @@ var Agent = class {
     return this.t.request({ method: "POST", path: "/v3/agent/tool-disguise", body });
   }
 };
+function _anomalyDetectBody(opts) {
+  const body = { algorithm: opts.algorithm ?? "zscore" };
+  if (opts.metric != null) body.metric = opts.metric;
+  if (opts.data_points) {
+    body.data_points = opts.data_points;
+  } else if (opts.history) {
+    const now = Math.floor(Date.now() / 1e3);
+    const points = opts.history.map((v, i) => ({ timestamp: now - (opts.history.length - i) * 60, value: v }));
+    if (opts.value != null) points.push({ timestamp: now, value: opts.value });
+    body.data_points = points;
+  }
+  if (opts.threshold != null) body.threshold = opts.threshold;
+  for (const k of Object.keys(opts)) {
+    if (!["metric", "algorithm", "value", "history", "data_points", "threshold"].includes(k)) body[k] = opts[k];
+  }
+  return body;
+}
 var Anomaly = class {
   constructor(t) {
     this.t = t;
   }
   t;
   async algorithms() {
-    return this.t.request({ method: "GET", path: "/v3/anomaly/algorithms" });
+    const data = await this.t.request({ method: "GET", path: "/v3/anomaly/algorithms" });
+    if (Array.isArray(data)) return data;
+    return data?.algorithms ?? [];
   }
-  async detect(req) {
-    return this.t.request({ method: "POST", path: "/v3/anomaly/detect", body: req });
+  async detect(opts) {
+    return this.t.request({ method: "POST", path: "/v3/anomaly/detect", body: _anomalyDetectBody(opts) });
   }
-  async detectBatch(requests) {
-    return this.t.request({ method: "POST", path: "/v3/anomaly/detect/batch", body: { requests } });
-  }
-  events(opts = {}) {
-    return new Paginator(this.t, "/v3/anomaly/events", { page: opts.page ?? 1, limit: opts.limit ?? 20 });
+  async events(opts = {}) {
+    return this.t.request({ method: "GET", path: "/v3/anomaly/events", params: { limit: opts.limit ?? 20, ...opts.range ? { range: opts.range } : {}, ...opts.min_score != null ? { min_score: opts.min_score } : {} } });
   }
   async stats() {
     return this.t.request({ method: "GET", path: "/v3/anomaly/stats" });
@@ -810,17 +918,26 @@ var Multimodal = class {
     this.t = t;
   }
   t;
-  async scan(req) {
-    return this.t.request({ method: "POST", path: "/v3/multimodal/scan", body: req });
+  async scan(content, opts) {
+    const body = {};
+    if (content != null) body.text = content;
+    if (opts?.image) body.image = opts.image;
+    if (opts?.audio_transcription) body.audio_transcription = opts.audio_transcription;
+    if (opts?.check_types) body.check_types = opts.check_types;
+    return this.t.request({ method: "POST", path: "/v3/multimodal/scan", body });
   }
-  async imageAttack(body) {
-    return this.t.request({ method: "POST", path: "/v3/multimodal/image-attack", body });
+  async image(body) {
+    return this.t.request({ method: "POST", path: "/v3/multimodal/image", body });
   }
   async viscra(body) {
     return this.t.request({ method: "POST", path: "/v3/multimodal/viscra", body });
   }
   async mml(body) {
     return this.t.request({ method: "POST", path: "/v3/multimodal/mml", body });
+  }
+  // Backwards-compat alias
+  async imageAttack(body) {
+    return this.image(body);
   }
 };
 var Evolution = class {
@@ -829,7 +946,19 @@ var Evolution = class {
   }
   t;
   async generate(seedPrompt, opts) {
-    return this.t.request({ method: "POST", path: "/v3/evolution/generate", body: { seed_prompt: seedPrompt, ...opts } });
+    return this.t.request({
+      method: "POST",
+      path: "/v3/evolution/generate",
+      body: {
+        target_behavior: seedPrompt,
+        categories: opts?.categories ?? ["jailbreak"],
+        count: opts?.count ?? 10,
+        difficulty: opts?.difficulty ?? "medium",
+        include_multi_turn: opts?.include_multi_turn ?? false,
+        ...opts?.attack_type ? { attack_type: opts.attack_type } : {},
+        ...opts?.mutation_rate != null ? { mutation_rate: opts.mutation_rate } : {}
+      }
+    });
   }
   async evolve(body) {
     return this.t.request({ method: "POST", path: "/v3/evolution/evolve", body });
@@ -843,14 +972,15 @@ var Saber = class {
     this.t = t;
   }
   t;
-  async estimate(req) {
-    return this.t.request({ method: "POST", path: "/v3/saber/estimate", body: req });
+  async estimate(content, opts) {
+    const queries = Array.isArray(content) ? content : [{ query_id: "default", total_trials: 100, success_count: 5, category: "smoke" }];
+    return this.t.request({ method: "POST", path: "/v3/saber/estimate", body: { queries, ...opts } });
   }
-  async evaluate(req) {
-    return this.t.request({ method: "POST", path: "/v3/saber/evaluate", body: req });
+  async evaluate(content, opts) {
+    return this.t.request({ method: "POST", path: "/v3/saber/evaluate", body: { content, ...opts } });
   }
-  async budget() {
-    return this.t.request({ method: "GET", path: "/v3/saber/budget" });
+  async budget(opts) {
+    return this.t.request({ method: "GET", path: "/v3/saber/budget", params: { tau: opts?.tau ?? 0.5, ...opts?.alpha != null ? { alpha: opts.alpha } : {}, ...opts?.beta != null ? { beta: opts.beta } : {} } });
   }
   async compare(content, defenses) {
     return this.t.request({ method: "POST", path: "/v3/saber/compare", body: { content, defenses } });
