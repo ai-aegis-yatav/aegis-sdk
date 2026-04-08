@@ -1,0 +1,12 @@
+{
+  "name": "aegis-sdk-smoke-js",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "install-sdk": "test -n \"$AEGIS_SDK_JS_PATH\" || (echo 'set AEGIS_SDK_JS_PATH=/path/to/aegis-sdk/javascript (must be built: npm install && npm run build)' >&2 && exit 1) && (cd \"$AEGIS_SDK_JS_PATH\" && npm install && npm run build) && npm install \"$AEGIS_SDK_JS_PATH\"",
+    "smoke": "node orchestration_full.mjs"
+  },
+  "dependencies": {
+    "@aegis-ai/sdk": "file:../../../../../../../private/tmp/aegis-work/aegis-sdk/javascript"
+  }
+}
