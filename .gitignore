@@ -1,0 +1,5 @@
+javascript/node_modules/
+javascript/dist/
+python/src/aegis/**/__pycache__/
+python/**/*.egg-info/
+rust/target/
