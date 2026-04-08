@@ -2,6 +2,24 @@ import type { Transport } from "../transport";
 import { Paginator } from "../pagination";
 import type * as M from "../models/index";
 
+export { Orchestration } from "./orchestration";
+export type {
+  OrchestrationScenario,
+  OrchestrationMode,
+  EnsembleAlgorithm,
+  Contributor,
+  OrchestratedDecision,
+  RunRequest as OrchestrationRunRequest,
+  RunResponse as OrchestrationRunResponse,
+  OrchestrationConfig,
+  UpsertConfigRequest as OrchestrationUpsertConfigRequest,
+  GridSearchJobRequest as OrchestrationGridSearchJobRequest,
+  GridSearchJob as OrchestrationGridSearchJob,
+  GridSearchResult as OrchestrationGridSearchResult,
+  TimeseriesAnomalyRequest,
+  TimeseriesAnomalyResponse,
+} from "./orchestration";
+
 export class Escalations {
   constructor(private t: Transport) {}
   async create(req: M.EscalationCreateRequest): Promise<M.Escalation> { return this.t.request({ method: "POST", path: "/v1/escalations", body: req }); }

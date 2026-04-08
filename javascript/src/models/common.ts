@@ -13,7 +13,8 @@ export interface QuotaInfo {
 }
 
 export interface ClientOptions {
-  apiKey: string;
+  apiKey?: string;
+  accessToken?: string;
   baseUrl?: string;
   timeout?: number;
   maxRetries?: number;

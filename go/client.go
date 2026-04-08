@@ -30,8 +30,9 @@ type Client struct {
 	Multimodal  *MultimodalService
 	Evolution   *EvolutionService
 	Saber       *SaberService
-	Ops         *OpsService
-	ApiKeys     *ApiKeysService
+	Ops           *OpsService
+	ApiKeys       *ApiKeysService
+	Orchestration *OrchestrationService
 }
 
 func newClient(apiKey string, cfg *clientConfig) *Client {
@@ -60,6 +61,7 @@ func newClient(apiKey string, cfg *clientConfig) *Client {
 	c.Saber = &SaberService{t: t}
 	c.Ops = &OpsService{t: t}
 	c.ApiKeys = &ApiKeysService{t: t}
+	c.Orchestration = &OrchestrationService{t: t}
 
 	return c
 }

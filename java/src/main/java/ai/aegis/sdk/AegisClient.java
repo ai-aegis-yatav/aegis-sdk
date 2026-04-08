@@ -35,6 +35,7 @@ public final class AegisClient implements AutoCloseable {
     private volatile SaberResource saberResource;
     private volatile OpsResource opsResource;
     private volatile ApiKeysResource apiKeysResource;
+    private volatile OrchestrationResource orchestrationResource;
 
     private AegisClient(ClientConfig config) {
         this.transport = new Transport(config);
@@ -346,6 +347,20 @@ public final class AegisClient implements AutoCloseable {
                 if (r == null) {
                     r = new ApiKeysResource(transport);
                     apiKeysResource = r;
+                }
+            }
+        }
+        return r;
+    }
+
+    public OrchestrationResource orchestration() {
+        OrchestrationResource r = orchestrationResource;
+        if (r == null) {
+            synchronized (this) {
+                r = orchestrationResource;
+                if (r == null) {
+                    r = new OrchestrationResource(transport);
+                    orchestrationResource = r;
                 }
             }
         }

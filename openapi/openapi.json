@@ -941,6 +941,134 @@
           }
         }
       }
+    },
+    "/v1/orchestration/runs": {
+      "post": {
+        "tags": ["orchestration"],
+        "summary": "Run a scenario (defaults to full) with v1 always included",
+        "security": [{"bearer_auth": []}, {"api_key": []}],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationRunRequest"}}}},
+        "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationRunResponse"}}}}}
+      }
+    },
+    "/v1/orchestration/runs/basic": {"post": {"tags": ["orchestration"], "summary": "v1/judge only", "security": [{"bearer_auth": []}, {"api_key": []}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationRunRequest"}}}}, "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationRunResponse"}}}}}}},
+    "/v1/orchestration/runs/standard": {"post": {"tags": ["orchestration"], "summary": "v1 + v2 detectors", "security": [{"bearer_auth": []}, {"api_key": []}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationRunRequest"}}}}, "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationRunResponse"}}}}}}},
+    "/v1/orchestration/runs/full": {"post": {"tags": ["orchestration"], "summary": "v1 + v2 + v3 unified", "security": [{"bearer_auth": []}, {"api_key": []}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationRunRequest"}}}}, "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationRunResponse"}}}}}}},
+    "/v1/orchestration/runs/advanced": {"post": {"tags": ["orchestration"], "summary": "v1 + v2 + v3 (advanced attack focus)", "security": [{"bearer_auth": []}, {"api_key": []}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationRunRequest"}}}}, "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationRunResponse"}}}}}}},
+    "/v1/orchestration/runs/agent": {"post": {"tags": ["orchestration"], "summary": "v1 + v3/agent (DPI/IPI/tool-hijack)", "security": [{"bearer_auth": []}, {"api_key": []}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationRunRequest"}}}}, "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationRunResponse"}}}}}}},
+    "/v1/orchestration/runs/anomaly": {"post": {"tags": ["orchestration"], "summary": "v1 + v3/anomaly (text proxy)", "security": [{"bearer_auth": []}, {"api_key": []}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationRunRequest"}}}}, "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationRunResponse"}}}}}}},
+    "/v1/orchestration/runs/pii": {"post": {"tags": ["orchestration"], "summary": "v1 + PII pattern detection", "security": [{"bearer_auth": []}, {"api_key": []}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationRunRequest"}}}}, "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationRunResponse"}}}}}}},
+    "/v1/orchestration/runs/anomaly/timeseries": {
+      "post": {
+        "tags": ["orchestration"],
+        "summary": "Timeseries anomaly detection (zscore/moving_average/iqr/isolation_forest)",
+        "security": [{"bearer_auth": []}, {"api_key": []}],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/TimeseriesAnomalyRequest"}}}},
+        "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/TimeseriesAnomalyResponse"}}}}}
+      }
+    },
+    "/v1/orchestration/configs/{tenant_id}/{scenario}": {
+      "get": {
+        "tags": ["orchestration"],
+        "summary": "Get per-tenant orchestration config",
+        "security": [{"bearer_auth": []}, {"api_key": []}],
+        "parameters": [
+          {"name": "tenant_id", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}},
+          {"name": "scenario", "in": "path", "required": true, "schema": {"type": "string"}}
+        ],
+        "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationConfig"}}}}, "404": {"description": "Not found"}}
+      },
+      "put": {
+        "tags": ["orchestration"],
+        "summary": "Upsert per-tenant orchestration config",
+        "security": [{"bearer_auth": []}, {"api_key": []}],
+        "parameters": [
+          {"name": "tenant_id", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}},
+          {"name": "scenario", "in": "path", "required": true, "schema": {"type": "string"}}
+        ],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationUpsertConfigRequest"}}}},
+        "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationConfig"}}}}}
+      }
+    },
+    "/v1/orchestration/gridsearch": {
+      "post": {
+        "tags": ["orchestration"],
+        "summary": "Run a synchronous grid search over a domain dataset (smoke-test variant)",
+        "security": [{"bearer_auth": []}, {"api_key": []}],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationGridSearchRequest"}}}},
+        "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationGridSearchResponse"}}}}}
+      }
+    },
+    "/v3/pipeline/run": {
+      "post": {
+        "tags": ["v3-pipeline"],
+        "summary": "Run the integrated RedTeam → LLM → PALADIN → SABER → Evolution pipeline",
+        "security": [{"bearer_auth": []}, {"api_key": []}],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/V3PipelineRequest"}}}},
+        "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/V3PipelineResponse"}}}}}
+      }
+    },
+    "/v3/military/orchestrate": {
+      "post": {
+        "tags": ["v3-military"],
+        "summary": "Run all 7 military defense modules on a single text input",
+        "security": [{"bearer_auth": []}, {"api_key": []}],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/V3MilitaryOrchestrateRequest"}}}},
+        "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/V3MilitaryOrchestrateResponse"}}}}}
+      }
+    },
+    "/v3/military/status": {
+      "get": {
+        "tags": ["v3-military"],
+        "summary": "Get availability and health of all 7 military modules",
+        "security": [{"bearer_auth": []}, {"api_key": []}],
+        "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/V3MilitaryStatusResponse"}}}}}
+      }
+    },
+    "/v1/orchestration/gridsearch/jobs": {
+      "post": {
+        "tags": ["orchestration"],
+        "summary": "Queue a grid-search job over a domain dataset",
+        "security": [{"bearer_auth": []}, {"api_key": []}],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationGridSearchJobRequest"}}}},
+        "responses": {"200": {"description": "Accepted", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationCreateJobResponse"}}}}}
+      }
+    },
+    "/v1/orchestration/gridsearch/jobs/{job_id}": {
+      "get": {
+        "tags": ["orchestration"],
+        "summary": "Get grid-search job status",
+        "security": [{"bearer_auth": []}, {"api_key": []}],
+        "parameters": [{"name": "job_id", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}],
+        "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationGridSearchJob"}}}}, "404": {"description": "Not found"}}
+      }
+    },
+    "/v1/orchestration/gridsearch/jobs/{job_id}/results": {
+      "get": {
+        "tags": ["orchestration"],
+        "summary": "List grid-search job results (sorted by F1 desc)",
+        "security": [{"bearer_auth": []}, {"api_key": []}],
+        "parameters": [{"name": "job_id", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}],
+        "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/OrchestrationGridSearchResult"}}}}}}
+      }
+    },
+    "/v1/orchestration/gridsearch/jobs/{job_id}/promote": {
+      "post": {
+        "tags": ["orchestration"],
+        "summary": "Promote the optimal grid-search combo into tenant config",
+        "security": [{"bearer_auth": []}, {"api_key": []}],
+        "parameters": [{"name": "job_id", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationPromoteRequest"}}}},
+        "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/OrchestrationConfig"}}}}}
+      }
+    },
+    "/v1/orchestration/datasets": {
+      "get": {
+        "tags": ["orchestration"],
+        "summary": "List domain datasets available for grid search",
+        "security": [{"bearer_auth": []}, {"api_key": []}],
+        "responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/OrchestrationDatasetEntry"}}}}}}
+      }
     }
   },
   "components": {
@@ -1594,6 +1722,278 @@
           "message": {"type": "string"},
           "request_id": {"type": "string"},
           "timestamp": {"type": "string", "format": "date-time"}
+        }
+      },
+      "OrchestrationScenario": {
+        "type": "string",
+        "enum": ["basic", "standard", "full", "advanced", "agent", "anomaly", "pii"]
+      },
+      "OrchestrationMode": {
+        "type": "string",
+        "enum": ["balanced", "recall", "precision", "strict", "bayes", "auto"]
+      },
+      "EnsembleAlgorithm": {
+        "type": "string",
+        "enum": ["max", "arith_mean", "weighted_mean", "noisy_or", "majority_vote", "log_odds_sum", "strict_consensus", "two_stage_veto", "hierarchical_cascade"]
+      },
+      "OrchestrationContributor": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "score": {"type": "number", "format": "double"},
+          "block": {"type": "boolean"},
+          "latency_ms": {"type": "integer", "nullable": true}
+        },
+        "required": ["name", "score", "block"]
+      },
+      "OrchestratedDecision": {
+        "type": "object",
+        "properties": {
+          "scenario": {"$ref": "#/components/schemas/OrchestrationScenario"},
+          "mode": {"$ref": "#/components/schemas/OrchestrationMode"},
+          "algorithm": {"$ref": "#/components/schemas/EnsembleAlgorithm"},
+          "decision": {"type": "string", "enum": ["block", "allow"]},
+          "ensemble_score": {"type": "number", "format": "double"},
+          "threshold": {"type": "number", "format": "double"},
+          "contributors": {"type": "array", "items": {"$ref": "#/components/schemas/OrchestrationContributor"}},
+          "explanation": {"type": "string"},
+          "total_latency_ms": {"type": "integer"}
+        }
+      },
+      "OrchestrationRunRequest": {
+        "type": "object",
+        "required": ["content"],
+        "properties": {
+          "content": {"type": "string"},
+          "scenario": {"$ref": "#/components/schemas/OrchestrationScenario"},
+          "mode": {"$ref": "#/components/schemas/OrchestrationMode"},
+          "algorithm": {"$ref": "#/components/schemas/EnsembleAlgorithm"},
+          "weights": {"type": "object", "additionalProperties": {"type": "number"}},
+          "threshold": {"type": "number", "format": "double", "nullable": true}
+        }
+      },
+      "OrchestrationRunResponse": {
+        "type": "object",
+        "properties": {
+          "decision": {"$ref": "#/components/schemas/OrchestratedDecision"}
+        }
+      },
+      "TimeseriesAnomalyRequest": {
+        "type": "object",
+        "required": ["value", "history"],
+        "properties": {
+          "value": {"type": "number", "format": "double"},
+          "history": {"type": "array", "items": {"type": "number", "format": "double"}},
+          "algorithm": {"type": "string", "enum": ["zscore", "moving_average", "iqr", "isolation_forest"], "nullable": true}
+        }
+      },
+      "TimeseriesAnomalyResponse": {
+        "type": "object",
+        "properties": {
+          "is_anomaly": {"type": "boolean"},
+          "anomaly_score": {"type": "number", "format": "double"},
+          "algorithm": {"type": "string"},
+          "latency_ms": {"type": "integer"}
+        }
+      },
+      "OrchestrationConfig": {
+        "type": "object",
+        "properties": {
+          "tenant_id": {"type": "string", "format": "uuid"},
+          "scenario": {"$ref": "#/components/schemas/OrchestrationScenario"},
+          "algorithm": {"$ref": "#/components/schemas/EnsembleAlgorithm"},
+          "mode": {"$ref": "#/components/schemas/OrchestrationMode"},
+          "weights": {"type": "object", "additionalProperties": {"type": "number"}},
+          "thresholds": {"type": "object", "additionalProperties": {"type": "number"}},
+          "source_job_id": {"type": "string", "format": "uuid", "nullable": true},
+          "updated_at": {"type": "string", "format": "date-time"}
+        }
+      },
+      "OrchestrationUpsertConfigRequest": {
+        "type": "object",
+        "required": ["algorithm", "mode"],
+        "properties": {
+          "algorithm": {"$ref": "#/components/schemas/EnsembleAlgorithm"},
+          "mode": {"$ref": "#/components/schemas/OrchestrationMode"},
+          "weights": {"type": "object", "additionalProperties": {"type": "number"}},
+          "thresholds": {"type": "object", "additionalProperties": {"type": "number"}},
+          "source_job_id": {"type": "string", "format": "uuid", "nullable": true}
+        }
+      },
+      "OrchestrationGridSearchJobRequest": {
+        "type": "object",
+        "required": ["domain", "scenario"],
+        "properties": {
+          "domain": {"type": "string"},
+          "scenario": {"$ref": "#/components/schemas/OrchestrationScenario"},
+          "max_samples": {"type": "integer", "nullable": true}
+        }
+      },
+      "OrchestrationCreateJobResponse": {
+        "type": "object",
+        "properties": {
+          "job_id": {"type": "string", "format": "uuid"},
+          "status": {"type": "string"}
+        }
+      },
+      "OrchestrationGridSearchJob": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string", "format": "uuid"},
+          "tenant_id": {"type": "string", "format": "uuid", "nullable": true},
+          "domain": {"type": "string"},
+          "scenario": {"$ref": "#/components/schemas/OrchestrationScenario"},
+          "status": {"type": "string", "enum": ["queued", "running", "done", "failed", "cancelled"]},
+          "dataset_path": {"type": "string"},
+          "created_at": {"type": "string", "format": "date-time"},
+          "started_at": {"type": "string", "format": "date-time", "nullable": true},
+          "finished_at": {"type": "string", "format": "date-time", "nullable": true},
+          "error": {"type": "string", "nullable": true}
+        }
+      },
+      "OrchestrationGridMetrics": {
+        "type": "object",
+        "properties": {
+          "precision": {"type": "number", "format": "double"},
+          "recall": {"type": "number", "format": "double"},
+          "f1": {"type": "number", "format": "double"},
+          "pr_auc": {"type": "number", "format": "double"},
+          "support": {"type": "integer"}
+        }
+      },
+      "OrchestrationGridSearchResult": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string", "format": "uuid"},
+          "job_id": {"type": "string", "format": "uuid"},
+          "algorithm": {"$ref": "#/components/schemas/EnsembleAlgorithm"},
+          "params": {"type": "object"},
+          "metrics": {"$ref": "#/components/schemas/OrchestrationGridMetrics"},
+          "is_optimal": {"type": "boolean"},
+          "created_at": {"type": "string", "format": "date-time"}
+        }
+      },
+      "OrchestrationPromoteRequest": {
+        "type": "object",
+        "required": ["tenant_id", "scenario"],
+        "properties": {
+          "tenant_id": {"type": "string", "format": "uuid"},
+          "scenario": {"$ref": "#/components/schemas/OrchestrationScenario"}
+        }
+      },
+      "OrchestrationDatasetEntry": {
+        "type": "object",
+        "properties": {
+          "domain": {"type": "string"},
+          "path": {"type": "string"}
+        }
+      },
+      "OrchestrationGridSearchRequest": {
+        "type": "object",
+        "required": ["domain", "scenario"],
+        "properties": {
+          "domain": {"type": "string"},
+          "scenario": {"$ref": "#/components/schemas/OrchestrationScenario"},
+          "max_samples": {"type": "integer", "minimum": 1, "nullable": true}
+        }
+      },
+      "OrchestrationGridSearchEntry": {
+        "type": "object",
+        "properties": {
+          "label": {"type": "string"},
+          "algorithm": {"type": "string"},
+          "precision": {"type": "number", "format": "double"},
+          "recall": {"type": "number", "format": "double"},
+          "f1": {"type": "number", "format": "double"},
+          "pr_auc": {"type": "number", "format": "double"}
+        }
+      },
+      "OrchestrationGridSearchResponse": {
+        "type": "object",
+        "properties": {
+          "domain": {"type": "string"},
+          "total_samples": {"type": "integer"},
+          "top_combos": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/OrchestrationGridSearchEntry"}
+          }
+        }
+      },
+      "V3PipelineRequest": {
+        "type": "object",
+        "required": ["prompt"],
+        "properties": {
+          "prompt": {"type": "string"},
+          "scenario_id": {"type": "string", "default": "custom"},
+          "category": {"type": "string", "default": "general"},
+          "algorithms": {"type": "array", "items": {"type": "string"}},
+          "target_provider_id": {"type": "string", "format": "uuid", "nullable": true},
+          "evolution_generations": {"type": "integer", "default": 5},
+          "saber_trials": {"type": "integer", "default": 50}
+        }
+      },
+      "V3PipelineResponse": {
+        "type": "object",
+        "properties": {
+          "unprotected": {"type": "object", "additionalProperties": true},
+          "redteam": {"type": "object", "additionalProperties": true},
+          "paladin": {"type": "object", "additionalProperties": true},
+          "output_defense": {"type": "object", "additionalProperties": true},
+          "evolution": {"type": "object", "additionalProperties": true},
+          "total_latency_ms": {"type": "integer"}
+        }
+      },
+      "V3MilitaryOrchestrateRequest": {
+        "type": "object",
+        "required": ["text"],
+        "properties": {
+          "text": {"type": "string", "maxLength": 100000},
+          "channel_level": {"type": "integer", "minimum": 0, "maximum": 4, "default": 2},
+          "source_domain": {"type": "string", "default": "MilitaryNet"},
+          "target_domain": {"type": "string", "default": "PublicNet"},
+          "session_id": {"type": "string", "nullable": true}
+        }
+      },
+      "V3MilitaryModuleResult": {
+        "type": "object",
+        "properties": {
+          "status": {"type": "string"},
+          "risk_score": {"type": "number", "format": "double"},
+          "latency_ms": {"type": "integer"},
+          "summary": {"type": "string"},
+          "details": {"type": "object", "additionalProperties": true}
+        }
+      },
+      "V3MilitaryOrchestrateResponse": {
+        "type": "object",
+        "properties": {
+          "overall_risk": {"type": "number", "format": "double"},
+          "overall_status": {"type": "string"},
+          "modules": {
+            "type": "object",
+            "additionalProperties": {"$ref": "#/components/schemas/V3MilitaryModuleResult"}
+          },
+          "total_latency_ms": {"type": "integer"},
+          "timestamp": {"type": "string", "format": "date-time"}
+        }
+      },
+      "V3MilitaryModuleStatus": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "available": {"type": "boolean"},
+          "last_analysis": {"type": "string", "nullable": true}
+        }
+      },
+      "V3MilitaryStatusResponse": {
+        "type": "object",
+        "properties": {
+          "modules": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/V3MilitaryModuleStatus"}
+          },
+          "overall_health": {"type": "string"},
+          "version": {"type": "string"}
         }
       }
     }

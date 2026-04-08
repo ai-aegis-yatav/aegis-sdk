@@ -40,8 +40,9 @@ describe("AegisClient", () => {
     expect(client.apiKeys).toBeDefined();
   });
 
-  it("should throw on empty apiKey", () => {
-    expect(() => new AegisClient({ apiKey: "" })).toThrow("apiKey is required");
+  it("should throw when no credentials provided", () => {
+    expect(() => new AegisClient({ apiKey: "" })).toThrow("apiKey or accessToken is required");
+    expect(() => new AegisClient({})).toThrow("apiKey or accessToken is required");
   });
 
   it("should have initial quota as empty", () => {

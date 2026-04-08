@@ -25,6 +25,7 @@ from aegis.resources.ml import AsyncML, SyncML
 from aegis.resources.multimodal import AsyncMultimodal, SyncMultimodal
 from aegis.resources.nlp import AsyncNLP, SyncNLP
 from aegis.resources.ops import AsyncOps, SyncOps
+from aegis.resources.orchestration import AsyncOrchestration, SyncOrchestration
 from aegis.resources.rules import AsyncRules, SyncRules
 from aegis.resources.saber import AsyncSaber, SyncSaber
 from aegis.resources.safety import AsyncSafety, SyncSafety
@@ -89,6 +90,9 @@ class AegisClient:
 
         # Management
         self.api_keys = SyncApiKeys(self._transport)
+
+        # Orchestration (v1 always included)
+        self.orchestration = SyncOrchestration(self._transport)
 
     @property
     def quota(self) -> QuotaInfo:
@@ -163,6 +167,9 @@ class AsyncAegisClient:
 
         # Management
         self.api_keys = AsyncApiKeys(self._transport)
+
+        # Orchestration (v1 always included)
+        self.orchestration = AsyncOrchestration(self._transport)
 
     @property
     def quota(self) -> QuotaInfo:

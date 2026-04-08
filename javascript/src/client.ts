@@ -6,7 +6,7 @@ import {
   Escalations, Analytics, EvidenceResource, ML, NLP, AiAct,
   Classify, Jailbreak, Safety, Defense, Advanced, AdversaFlow,
   GuardNet, Agent, Anomaly, Multimodal, Evolution, Saber,
-  Ops, ApiKeys,
+  Ops, ApiKeys, Orchestration,
 } from "./resources/index";
 
 export class AegisClient {
@@ -44,11 +44,17 @@ export class AegisClient {
   // Management
   readonly apiKeys: ApiKeys;
 
+  // Orchestration (v1 always included)
+  readonly orchestration: Orchestration;
+
   constructor(options: ClientOptions) {
-    if (!options.apiKey) throw new Error("apiKey is required");
+    if (!options.apiKey && !options.accessToken) {
+      throw new Error("apiKey or accessToken is required");
+    }
 
     this.transport = new Transport({
       apiKey: options.apiKey,
+      accessToken: options.accessToken,
       baseUrl: (options.baseUrl ?? "https://api.aiaegis.io").replace(/\/$/, ""),
       timeout: options.timeout ?? 30_000,
       maxRetries: options.maxRetries ?? 3,
@@ -80,6 +86,7 @@ export class AegisClient {
 
     this.ops = new Ops(this.transport);
     this.apiKeys = new ApiKeys(this.transport);
+    this.orchestration = new Orchestration(this.transport);
   }
 
   get quota(): QuotaInfo {

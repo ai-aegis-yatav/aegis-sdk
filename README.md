@@ -71,7 +71,7 @@ dependencies {
 
 ### 1. API Key 발급
 
-[AEGIS Dashboard](https://app.aiaegis.io)에서 API Key를 발급받으세요.
+[AEGIS Dashboard](https://dash.aiaegis.io)에서 API Key를 발급받으세요.
 
 1. Dashboard 로그인 → **API Keys** 메뉴
 2. **Create API Key** 클릭
@@ -251,3 +251,5 @@ For full documentation, see [`integrations/openclaw/README.md`](./integrations/o
 - **OpenAPI Spec**: [`openapi/openapi.json`](./openapi/openapi.json)
 
 ## License
+
+MIT

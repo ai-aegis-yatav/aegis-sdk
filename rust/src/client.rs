@@ -110,6 +110,10 @@ impl AegisClient {
         ApiKeysResource::new(Arc::clone(&self.transport))
     }
 
+    pub fn orchestration(&self) -> crate::resources::OrchestrationResource {
+        crate::resources::OrchestrationResource::new(Arc::clone(&self.transport))
+    }
+
     pub fn quota(&self) -> Option<QuotaInfo> {
         self.transport.last_quota()
     }

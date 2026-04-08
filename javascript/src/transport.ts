@@ -20,7 +20,8 @@ export interface RequestOptions {
 }
 
 export interface TransportConfig {
-  apiKey: string;
+  apiKey?: string;
+  accessToken?: string;
   baseUrl: string;
   timeout: number;
   maxRetries: number;
@@ -45,10 +46,10 @@ export class Transport {
         const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
 
         const headers: Record<string, string> = {
-          "X-API-Key": this.config.apiKey,
           "Content-Type": "application/json",
           Accept: "application/json",
           "User-Agent": "aegis-js-sdk/0.1.0",
+          ...this.authHeaders(),
           ...this.config.customHeaders,
           ...opts.headers,
         };
@@ -102,10 +103,10 @@ export class Transport {
   async *stream(opts: RequestOptions): AsyncGenerator<string> {
     const url = this.buildUrl(opts.path, opts.params);
     const headers: Record<string, string> = {
-      "X-API-Key": this.config.apiKey,
       "Content-Type": "application/json",
       Accept: "text/event-stream",
       "User-Agent": "aegis-js-sdk/0.1.0",
+      ...this.authHeaders(),
       ...this.config.customHeaders,
     };
 
@@ -145,6 +146,16 @@ export class Transport {
     } finally {
       reader.releaseLock();
     }
+  }
+
+  private authHeaders(): Record<string, string> {
+    if (this.config.apiKey) {
+      return { "X-API-Key": this.config.apiKey };
+    }
+    if (this.config.accessToken) {
+      return { Authorization: `Bearer ${this.config.accessToken}` };
+    }
+    return {};
   }
 
   private buildUrl(path: string, params?: Record<string, string | number | undefined>): string {
