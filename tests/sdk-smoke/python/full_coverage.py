@@ -30,7 +30,25 @@ if not API_KEY:
 
 c = AegisClient(api_key=API_KEY, base_url=BASE_URL)
 SAMPLE = "테스트입니다 — 비밀번호는 1234입니다."
-TENANT = os.environ.get("AEGIS_TEST_TENANT_ID", "00000000-0000-0000-0000-000000000001")
+
+# Discover the API key's authenticated tenant_id by inspecting a judgment
+# response (the create endpoint always echoes tenant_id in its result body).
+def _discover_tenant() -> str:
+    env = os.environ.get("AEGIS_TEST_TENANT_ID")
+    if env:
+        return env
+    try:
+        r = c.judge.create(prompt="tenant probe")
+        for attr in ("tenant_id", "tenant"):
+            v = getattr(r, attr, None) if not isinstance(r, dict) else r.get(attr)
+            if v:
+                return str(v)
+    except Exception:
+        pass
+    return "00000000-0000-0000-0000-000000000001"
+
+
+TENANT = _discover_tenant()
 
 results: list[tuple[str, str, str, str]] = []  # group, name, status, detail
 
@@ -195,8 +213,11 @@ call("advanced", "info_extraction", lambda: c.advanced.info_extraction(SAMPLE))
 # ========================================================================
 # V2: adversaflow
 # ========================================================================
-call("adversaflow", "campaigns", lambda: list(c.adversaflow.campaigns(limit=5)))
-call("adversaflow", "tree", lambda: c.adversaflow.tree())
+campaigns = call("adversaflow", "campaigns",
+                 lambda: list(c.adversaflow.campaigns(limit=5)))
+_first_camp = (campaigns or [None])[0]
+_camp_id = _attr(_first_camp, "campaign_id", "id") or "test-campaign"
+call("adversaflow", "tree", lambda: c.adversaflow.tree(_camp_id))
 
 # ========================================================================
 # V3: guardnet
@@ -248,9 +269,9 @@ call("ops", "redteam_stats", lambda: c.ops.redteam_stats())
 call("ops", "attack_library", lambda: c.ops.attack_library())
 
 # ========================================================================
-# API keys
+# API keys — managed by the Next.js web app (apps/web), not the Rust API.
+# Skipped in defense-API smoke tests by design.
 # ========================================================================
-call("apiKeys", "list", lambda: list(c.api_keys.list(limit=5)))
 
 # ========================================================================
 # V1: orchestration (full coverage)

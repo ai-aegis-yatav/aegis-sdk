@@ -9,7 +9,7 @@ import { AegisClient } from "@aegis-ai/sdk";
 
 const API_KEY = process.env.AEGIS_API_KEY_PROD || process.env.AEGIS_API_KEY;
 const BASE_URL = process.env.AEGIS_BASE_URL || "https://api.aiaegis.io";
-const TENANT = process.env.AEGIS_TEST_TENANT_ID || "00000000-0000-0000-0000-000000000001";
+const TENANT_FALLBACK = process.env.AEGIS_TEST_TENANT_ID || "00000000-0000-0000-0000-000000000001";
 const SAMPLE = "테스트입니다 — 비밀번호는 1234입니다.";
 
 if (!API_KEY) {
@@ -19,6 +19,16 @@ if (!API_KEY) {
 
 const c = new AegisClient({ apiKey: API_KEY, baseUrl: BASE_URL });
 const results = [];
+
+async function discoverTenant() {
+  if (process.env.AEGIS_TEST_TENANT_ID) return process.env.AEGIS_TEST_TENANT_ID;
+  try {
+    const r = await c.judge.create({ prompt: "tenant probe" });
+    return r?.tenant_id || r?.tenant || TENANT_FALLBACK;
+  } catch {
+    return TENANT_FALLBACK;
+  }
+}
 
 async function call(group, name, fn) {
   const t0 = Date.now();
@@ -40,6 +50,8 @@ const attr = (o, ...names) => {
   for (const n of names) if (o[n] != null) return o[n];
   return null;
 };
+
+const tenantId = await discoverTenant();
 
 // ---- judge ----
 const j = await call("judge", "create", () => c.judge.create({ prompt: SAMPLE }));
@@ -85,7 +97,7 @@ await call("analytics", "performance", () => c.analytics.performance());
 // ---- ml ----
 await call("ml", "health", () => c.ml.health());
 await call("ml", "embed", () => c.ml.embed("hello"));
-await call("ml", "embedBatch", () => c.ml.embedBatch?.(["a", "b"]) ?? c.ml.embed_batch?.(["a", "b"]));
+await call("ml", "embedBatch", () => c.ml.embedBatch(["a", "b"]));
 await call("ml", "classify", () => c.ml.classify("test"));
 await call("ml", "similarity", () => c.ml.similarity("query", ["doc1", "doc2"]));
 
@@ -140,13 +152,14 @@ await call("advanced", "contextConfusion", () => c.advanced.contextConfusion?.(S
 await call("advanced", "infoExtraction", () => c.advanced.infoExtraction?.(SAMPLE) ?? c.advanced.info_extraction?.(SAMPLE));
 
 // ---- adversaflow ----
-await call("adversaflow", "campaigns", async () => {
+const campaigns = await call("adversaflow", "campaigns", async () => {
   const it = c.adversaflow.campaigns({ limit: 5 });
   const arr = [];
   for await (const x of it) { arr.push(x); if (arr.length >= 5) break; }
   return arr;
 });
-await call("adversaflow", "tree", () => c.adversaflow.tree());
+const _campId = campaigns?.[0]?.campaign_id || campaigns?.[0]?.id || "test-campaign";
+await call("adversaflow", "tree", () => c.adversaflow.tree(_campId));
 
 // ---- guardnet ----
 await call("guardnet", "analyze", () => c.guardnet.analyze(SAMPLE));
@@ -161,12 +174,7 @@ await call("agent", "scan", () => c.agent.scan(SAMPLE));
 // ---- anomaly ----
 await call("anomaly", "algorithms", () => c.anomaly.algorithms());
 await call("anomaly", "detect", () => c.anomaly.detect({ metric: "cpu", value: 42, history: [10, 11, 9.5, 10.2, 10.8] }));
-await call("anomaly", "events", async () => {
-  const it = c.anomaly.events({ limit: 5 });
-  const arr = [];
-  for await (const x of it) { arr.push(x); if (arr.length >= 5) break; }
-  return arr;
-});
+await call("anomaly", "events", () => c.anomaly.events({ limit: 5 }));
 await call("anomaly", "stats", () => c.anomaly.stats());
 
 // ---- multimodal ----
@@ -188,12 +196,7 @@ await call("ops", "redteamStats", () => c.ops.redteamStats?.() ?? c.ops.redteam_
 await call("ops", "attackLibrary", () => c.ops.attackLibrary?.() ?? c.ops.attack_library?.());
 
 // ---- apiKeys ----
-await call("apiKeys", "list", async () => {
-  const it = c.apiKeys.list({ limit: 5 });
-  const arr = [];
-  for await (const x of it) { arr.push(x); if (arr.length >= 5) break; }
-  return arr;
-});
+// Managed by the Next.js web app (apps/web), not the Rust defense API. Skipped by design.
 
 // ---- orchestration ----
 const o = c.orchestration;
@@ -207,9 +210,9 @@ await call("orchestration", "runs/anomaly", () => o.anomaly({ content: SAMPLE })
 await call("orchestration", "runs/pii", () => o.pii({ content: SAMPLE }));
 await call("orchestration", "runs/anomaly/timeseries", () =>
   o.anomalyTimeseries({ value: 42, history: [10, 11, 9.5, 10.2, 10.8], algorithm: "zscore" }));
-await call("orchestration", "configs GET", () => o.getConfig(TENANT, "standard"));
+await call("orchestration", "configs GET", () => o.getConfig(tenantId, "standard"));
 await call("orchestration", "configs PUT", () =>
-  o.upsertConfig(TENANT, "standard", {
+  o.upsertConfig(tenantId, "standard", {
     algorithm: "weighted_mean", mode: "auto",
     weights: { "v1.judge": 0.5, "v2.classify": 0.5 },
     thresholds: { block: 0.7 },
@@ -222,7 +225,7 @@ const jobId = attr(job, "job_id", "id") || "00000000-0000-0000-0000-000000000000
 await call("orchestration", "gridsearch/jobs/{id}", () => o.getGridsearchJob(jobId));
 await call("orchestration", "gridsearch/jobs/{id}/results", () => o.listGridsearchResults(jobId));
 await call("orchestration", "gridsearch/jobs/{id}/promote", () =>
-  o.promoteGridsearchJob(jobId, { tenant_id: TENANT, scenario: "standard" }));
+  o.promoteGridsearchJob(jobId, { tenant_id: tenantId, scenario: "standard" }));
 await call("orchestration", "datasets", () => o.listDatasets());
 await call("orchestration", "v3 pipeline/run", () =>
   o.pipelineRun({ prompt: SAMPLE, evolution_generations: 1, saber_trials: 5 }));
