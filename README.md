@@ -247,7 +247,7 @@ For full documentation, see [`integrations/openclaw/README.md`](./integrations/o
 
 - **Full Documentation**: [docs.aiaegis.io](https://docs.aiaegis.io)
 - **API Reference**: [docs.aiaegis.io/api](https://docs.aiaegis.io/api)
-- **Dashboard**: [dash.aiaegis.io](https://app.aiaegis.io)
+- **Dashboard**: [app.aiaegis.io](https://app.aiaegis.io)
 - **OpenAPI Spec**: [`openapi/openapi.json`](./openapi/openapi.json)
 
 ## License
