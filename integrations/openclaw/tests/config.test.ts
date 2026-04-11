@@ -9,7 +9,7 @@ describe("loadConfig", () => {
   it("loads minimal config with defaults", () => {
     const cfg = loadConfig(BASE_ENV);
     expect(cfg.apiKey).toBe("aegis_sk_test_key_123");
-    expect(cfg.baseUrl).toBe("https://api.aegis.ai");
+    expect(cfg.baseUrl).toBe("https://api.aiaegis.io");
     expect(cfg.guardMode).toBe("balanced");
     expect(cfg.timeout).toBe(5000);
     expect(cfg.maxRetries).toBe(2);

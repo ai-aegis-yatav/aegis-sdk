@@ -348,6 +348,71 @@ export class Saber {
   async report(reportId: string): Promise<Record<string, unknown>> { return this.t.request({ method: "GET", path: `/v3/saber/report/${reportId}` }); }
 }
 
+export class Dreamdojo {
+  constructor(private t: Transport) {}
+  async validateAction(body: Record<string, unknown>): Promise<Record<string, unknown>> { return this.t.request({ method: "POST", path: "/v3/dreamdojo/validate-action", body }); }
+  async validateInput(body: Record<string, unknown>): Promise<Record<string, unknown>> { return this.t.request({ method: "POST", path: "/v3/dreamdojo/validate-input", body }); }
+  async validatePipeline(body: Record<string, unknown>): Promise<Record<string, unknown>> { return this.t.request({ method: "POST", path: "/v3/dreamdojo/validate-pipeline", body }); }
+  async validateLatent(body: Record<string, unknown>): Promise<Record<string, unknown>> { return this.t.request({ method: "POST", path: "/v3/dreamdojo/validate-latent", body }); }
+  async embodiments(): Promise<Record<string, unknown>> { return this.t.request({ method: "GET", path: "/v3/dreamdojo/embodiments" }); }
+}
+
+export class Military {
+  constructor(private t: Transport) {}
+  async antiSpoofing(body: Record<string, unknown>): Promise<Record<string, unknown>> { return this.t.request({ method: "POST", path: "/v3/military/anti-spoofing/analyze", body }); }
+  async classification(body: Record<string, unknown>): Promise<Record<string, unknown>> { return this.t.request({ method: "POST", path: "/v3/military/classification/analyze", body }); }
+  async commandChain(body: Record<string, unknown>): Promise<Record<string, unknown>> { return this.t.request({ method: "POST", path: "/v3/military/command-chain/analyze", body }); }
+  async crossDomain(body: Record<string, unknown>): Promise<Record<string, unknown>> { return this.t.request({ method: "POST", path: "/v3/military/cross-domain/analyze", body }); }
+  async opsec(body: Record<string, unknown>): Promise<Record<string, unknown>> { return this.t.request({ method: "POST", path: "/v3/military/opsec/analyze", body }); }
+  async roe(body: Record<string, unknown>): Promise<Record<string, unknown>> { return this.t.request({ method: "POST", path: "/v3/military/roe/analyze", body }); }
+  async tacticalAutonomy(body: Record<string, unknown>): Promise<Record<string, unknown>> { return this.t.request({ method: "POST", path: "/v3/military/tactical-autonomy/analyze", body }); }
+  async orchestrate(body: Record<string, unknown>): Promise<Record<string, unknown>> { return this.t.request({ method: "POST", path: "/v3/military/orchestrate", body }); }
+  async status(): Promise<Record<string, unknown>> { return this.t.request({ method: "GET", path: "/v3/military/status" }); }
+}
+
+export class GuardModel {
+  constructor(private t: Transport) {}
+  async stats(): Promise<Record<string, unknown>> { return this.t.request({ method: "GET", path: "/v3/guard-model/stats" }); }
+  async performance(): Promise<Record<string, unknown>> { return this.t.request({ method: "GET", path: "/v3/guard-model/performance" }); }
+  async train(body: Record<string, unknown>): Promise<Record<string, unknown>> { return this.t.request({ method: "POST", path: "/v3/guard-model/train", body }); }
+  async trainStatus(): Promise<Record<string, unknown>> { return this.t.request({ method: "GET", path: "/v3/guard-model/train/status" }); }
+  async trainCancel(): Promise<Record<string, unknown>> { return this.t.request({ method: "POST", path: "/v3/guard-model/train/cancel" }); }
+}
+
+export class Korean {
+  constructor(private t: Transport) {}
+  async analyze(body: Record<string, unknown>): Promise<Record<string, unknown>> { return this.t.request({ method: "POST", path: "/v3/korean/analyze", body }); }
+}
+
+export class Pipeline {
+  constructor(private t: Transport) {}
+  async run(body: Record<string, unknown>): Promise<Record<string, unknown>> { return this.t.request({ method: "POST", path: "/v3/pipeline/run", body }); }
+}
+
+export class Reports {
+  constructor(private t: Transport) {}
+  async generate(body: Record<string, unknown>): Promise<Record<string, unknown>> { return this.t.request({ method: "POST", path: "/v3/reports/generate", body }); }
+}
+
+export class TokenMonitor {
+  constructor(private t: Transport) {}
+  async usage(params?: Record<string, string>): Promise<Record<string, unknown>> { return this.t.request({ method: "GET", path: "/v3/token-monitor/usage", params }); }
+  async listQuotas(): Promise<Record<string, unknown>> { return this.t.request({ method: "GET", path: "/v3/token-monitor/quotas" }); }
+  async createQuota(body: Record<string, unknown>): Promise<Record<string, unknown>> { return this.t.request({ method: "POST", path: "/v3/token-monitor/quotas", body }); }
+  async updateQuota(id: string, body: Record<string, unknown>): Promise<Record<string, unknown>> { return this.t.request({ method: "PATCH", path: `/v3/token-monitor/quotas/${id}`, body }); }
+  async listAlerts(params?: Record<string, string>): Promise<Record<string, unknown>> { return this.t.request({ method: "GET", path: "/v3/token-monitor/alerts", params }); }
+  async updateAlert(id: string, body: Record<string, unknown>): Promise<Record<string, unknown>> { return this.t.request({ method: "PATCH", path: `/v3/token-monitor/alerts/${id}`, body }); }
+  async overview(): Promise<Record<string, unknown>> { return this.t.request({ method: "GET", path: "/v3/token-monitor/overview" }); }
+}
+
+export class V3Analytics {
+  constructor(private t: Transport) {}
+  async explain(judgmentId: string): Promise<Record<string, unknown>> { return this.t.request({ method: "GET", path: `/v3/analytics/explain/${judgmentId}` }); }
+  async layerStats(params?: Record<string, string>): Promise<Record<string, unknown>> { return this.t.request({ method: "GET", path: "/v3/analytics/layer-stats", params }); }
+  async attackClusters(body: Record<string, unknown>): Promise<Record<string, unknown>> { return this.t.request({ method: "POST", path: "/v3/analytics/attack-clusters", body }); }
+  async baseline(params?: Record<string, string>): Promise<Record<string, unknown>> { return this.t.request({ method: "GET", path: "/v3/analytics/baseline", params }); }
+}
+
 // Ops
 export class Ops {
   constructor(private t: Transport) {}

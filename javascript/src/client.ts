@@ -6,6 +6,7 @@ import {
   Escalations, Analytics, EvidenceResource, ML, NLP, AiAct,
   Classify, Jailbreak, Safety, Defense, Advanced, AdversaFlow,
   GuardNet, Agent, Anomaly, Multimodal, Evolution, Saber,
+  Dreamdojo, Military, GuardModel, Korean, Pipeline, Reports, TokenMonitor, V3Analytics,
   Ops, ApiKeys, Orchestration,
 } from "./resources/index";
 
@@ -37,6 +38,14 @@ export class AegisClient {
   readonly multimodal: Multimodal;
   readonly evolution: Evolution;
   readonly saber: Saber;
+  readonly dreamdojo: Dreamdojo;
+  readonly military: Military;
+  readonly guardModel: GuardModel;
+  readonly korean: Korean;
+  readonly pipeline: Pipeline;
+  readonly reports: Reports;
+  readonly tokenMonitor: TokenMonitor;
+  readonly v3Analytics: V3Analytics;
 
   // Ops
   readonly ops: Ops;
@@ -83,6 +92,14 @@ export class AegisClient {
     this.multimodal = new Multimodal(this.transport);
     this.evolution = new Evolution(this.transport);
     this.saber = new Saber(this.transport);
+    this.dreamdojo = new Dreamdojo(this.transport);
+    this.military = new Military(this.transport);
+    this.guardModel = new GuardModel(this.transport);
+    this.korean = new Korean(this.transport);
+    this.pipeline = new Pipeline(this.transport);
+    this.reports = new Reports(this.transport);
+    this.tokenMonitor = new TokenMonitor(this.transport);
+    this.v3Analytics = new V3Analytics(this.transport);
 
     this.ops = new Ops(this.transport);
     this.apiKeys = new ApiKeys(this.transport);

@@ -116,18 +116,25 @@ export interface LifecycleHookOptions {
 
 export type PhaseHandler<T> = (ctx: T) => void | Promise<void>;
 
-export interface LifecycleAPI {
-  on<T>(phase: string, handler: PhaseHandler<T>, options?: LifecycleHookOptions): void;
-}
-
 export interface OpenClawPluginAPI {
-  lifecycle: LifecycleAPI;
-  log: {
+  id: string;
+  name?: string;
+  version?: string;
+  description?: string;
+  source: string;
+  config: Record<string, unknown>;
+  pluginConfig: Record<string, unknown>;
+  logger: {
     info(msg: string, ...args: unknown[]): void;
     warn(msg: string, ...args: unknown[]): void;
     error(msg: string, ...args: unknown[]): void;
-    debug(msg: string, ...args: unknown[]): void;
+    debug?(msg: string, ...args: unknown[]): void;
   };
+  on<T>(hookName: string, handler: PhaseHandler<T>, options?: LifecycleHookOptions): void;
+  registerHook(events: string | string[], handler: (...args: unknown[]) => void, opts?: LifecycleHookOptions): void;
+  registerTool(tool: Record<string, unknown>, opts?: Record<string, unknown>): void;
+  registerHttpRoute(params: Record<string, unknown>): void;
+  registerCommand(command: Record<string, unknown>): void;
 }
 
 // ---------------------------------------------------------------------------

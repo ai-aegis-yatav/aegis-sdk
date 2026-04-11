@@ -1,37 +1,79 @@
 {
-  "name": "aegis-guard",
+  "id": "aegis-guard",
+  "name": "AEGIS Guard — AI Agent Defense",
   "version": "0.1.0",
-  "displayName": "AEGIS Guard — AI Agent Defense",
   "description": "Enterprise-grade AI agent defense powered by AEGIS PALADIN 6-layer pipeline. Protects against prompt injection, tool chain attacks, memory poisoning, reasoning hijacking, and more.",
-  "entry": "dist/index.js",
-  "permissions": [
-    "lifecycle:preMessageProcess",
-    "lifecycle:preToolExecution",
-    "lifecycle:postToolExecution",
-    "lifecycle:preMemoryStore",
-    "lifecycle:preMessageSend",
-    "lifecycle:onAgentReasoning",
-    "lifecycle:heartbeat",
-    "network:external"
-  ],
-  "configuration": {
-    "AEGIS_API_KEY": {
-      "type": "string",
-      "required": true,
-      "description": "Your AEGIS API key (aegis_sk_...)"
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "apiKey": {
+        "type": "string"
+      },
+      "baseUrl": {
+        "type": "string"
+      },
+      "guardMode": {
+        "type": "string",
+        "enum": ["strict", "balanced", "permissive"]
+      },
+      "enableInbound": {
+        "type": "boolean"
+      },
+      "enableTool": {
+        "type": "boolean"
+      },
+      "enableOutput": {
+        "type": "boolean"
+      },
+      "enableMemory": {
+        "type": "boolean"
+      },
+      "enableReasoning": {
+        "type": "boolean"
+      },
+      "enableHeartbeat": {
+        "type": "boolean"
+      }
+    }
+  },
+  "uiHints": {
+    "apiKey": {
+      "label": "AEGIS API Key",
+      "help": "Your AEGIS API key (aegis_sk_...)",
+      "secret": true
     },
-    "AEGIS_BASE_URL": {
-      "type": "string",
-      "required": false,
-      "default": "https://api.aegis.ai",
-      "description": "AEGIS API base URL (for self-hosted deployments)"
+    "baseUrl": {
+      "label": "AEGIS API Base URL",
+      "help": "For self-hosted deployments (default: https://api.aiaegis.io)"
     },
-    "AEGIS_GUARD_MODE": {
-      "type": "string",
-      "required": false,
-      "default": "balanced",
-      "enum": ["strict", "balanced", "permissive"],
-      "description": "Defense strictness: strict (block aggressively), balanced, permissive (warn only)"
+    "guardMode": {
+      "label": "Guard Mode",
+      "help": "strict = block aggressively, balanced = default, permissive = warn only"
+    },
+    "enableInbound": {
+      "label": "Inbound Guard (DPI)",
+      "help": "Prompt injection detection on incoming messages"
+    },
+    "enableTool": {
+      "label": "Tool Guard (STAC)",
+      "help": "Tool chain abuse and tool-disguise detection"
+    },
+    "enableOutput": {
+      "label": "Output Guard (IPI + Safety)",
+      "help": "Indirect prompt injection in tool output + outbound safety check"
+    },
+    "enableMemory": {
+      "label": "Memory Guard",
+      "help": "Memory poisoning prevention (MINJA, InjecMEM, MemoryGraft)"
+    },
+    "enableReasoning": {
+      "label": "Reasoning Guard",
+      "help": "Chain-of-Thought hijack and goal substitution detection"
+    },
+    "enableHeartbeat": {
+      "label": "Heartbeat Anomaly",
+      "help": "Periodic session anomaly detection via Isolation Forest"
     }
   }
 }

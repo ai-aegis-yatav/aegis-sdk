@@ -27,6 +27,14 @@ const DPI_PATTERNS: RegExp[] = [
   /reveal\s+(your\s+)?(system\s+)?prompt/i,
   /output\s+(your\s+)?initial\s+instructions/i,
   /\bexfiltrate\b/i,
+  /pretend\s+(to\s+be|you\s+are)/i,
+  /act\s+as\s+if/i,
+  /from\s+now\s+on.*ignore/i,
+  /이전.*지시.*무시/i,
+  /모든\s*규칙.*무시/i,
+  /시스템\s*프롬프트.*출력/i,
+  /前の指示.*無視/i,
+  /ignor.*instrucciones\s+anteriores/i,
 ];
 
 const TOOL_DANGER_PATTERNS: RegExp[] = [

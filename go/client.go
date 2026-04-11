@@ -33,6 +33,14 @@ type Client struct {
 	Ops           *OpsService
 	ApiKeys       *ApiKeysService
 	Orchestration *OrchestrationService
+	Dreamdojo     *DreamdojoService
+	Military      *MilitaryService
+	GuardModel    *GuardModelService
+	Korean        *KoreanService
+	Pipeline      *PipelineService
+	Reports       *ReportsService
+	TokenMonitor  *TokenMonitorService
+	V3Analytics   *V3AnalyticsService
 }
 
 func newClient(apiKey string, cfg *clientConfig) *Client {
@@ -62,6 +70,14 @@ func newClient(apiKey string, cfg *clientConfig) *Client {
 	c.Ops = &OpsService{t: t}
 	c.ApiKeys = &ApiKeysService{t: t}
 	c.Orchestration = &OrchestrationService{t: t}
+	c.Dreamdojo = &DreamdojoService{t: t}
+	c.Military = &MilitaryService{t: t}
+	c.GuardModel = &GuardModelService{t: t}
+	c.Korean = &KoreanService{t: t}
+	c.Pipeline = &PipelineService{t: t}
+	c.Reports = &ReportsService{t: t}
+	c.TokenMonitor = &TokenMonitorService{t: t}
+	c.V3Analytics = &V3AnalyticsService{t: t}
 
 	return c
 }

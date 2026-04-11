@@ -19,7 +19,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
 
   return {
     apiKey,
-    baseUrl: (env.AEGIS_BASE_URL ?? "https://api.aegis.ai").replace(/\/$/, ""),
+    baseUrl: (env.AEGIS_BASE_URL ?? "https://api.aiaegis.io").replace(/\/$/, ""),
     guardMode,
     timeout: parseInt(env.AEGIS_TIMEOUT ?? "5000", 10),
     maxRetries: parseInt(env.AEGIS_MAX_RETRIES ?? "2", 10),

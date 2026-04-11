@@ -15,20 +15,28 @@ from aegis.resources.anomaly import AsyncAnomaly, SyncAnomaly
 from aegis.resources.api_keys import AsyncApiKeys, SyncApiKeys
 from aegis.resources.classify import AsyncClassify, SyncClassify
 from aegis.resources.defense import AsyncDefense, SyncDefense
+from aegis.resources.dreamdojo import AsyncDreamDojo, SyncDreamDojo
 from aegis.resources.escalations import AsyncEscalations, SyncEscalations
 from aegis.resources.evidence import AsyncEvidence, SyncEvidence
 from aegis.resources.evolution import AsyncEvolution, SyncEvolution
+from aegis.resources.guard_model import AsyncGuardModel, SyncGuardModel
 from aegis.resources.guardnet import AsyncGuardNet, SyncGuardNet
 from aegis.resources.jailbreak import AsyncJailbreak, SyncJailbreak
 from aegis.resources.judge import AsyncJudge, SyncJudge
+from aegis.resources.korean import AsyncKorean, SyncKorean
+from aegis.resources.military import AsyncMilitary, SyncMilitary
 from aegis.resources.ml import AsyncML, SyncML
 from aegis.resources.multimodal import AsyncMultimodal, SyncMultimodal
 from aegis.resources.nlp import AsyncNLP, SyncNLP
 from aegis.resources.ops import AsyncOps, SyncOps
 from aegis.resources.orchestration import AsyncOrchestration, SyncOrchestration
+from aegis.resources.pipeline import AsyncPipeline, SyncPipeline
+from aegis.resources.reports import AsyncReports, SyncReports
 from aegis.resources.rules import AsyncRules, SyncRules
 from aegis.resources.saber import AsyncSaber, SyncSaber
 from aegis.resources.safety import AsyncSafety, SyncSafety
+from aegis.resources.token_monitor import AsyncTokenMonitor, SyncTokenMonitor
+from aegis.resources.v3_analytics import AsyncV3Analytics, SyncV3Analytics
 
 
 class AegisClient:
@@ -84,6 +92,14 @@ class AegisClient:
         self.multimodal = SyncMultimodal(self._transport)
         self.evolution = SyncEvolution(self._transport)
         self.saber = SyncSaber(self._transport)
+        self.dreamdojo = SyncDreamDojo(self._transport)
+        self.military = SyncMilitary(self._transport)
+        self.guard_model = SyncGuardModel(self._transport)
+        self.korean = SyncKorean(self._transport)
+        self.pipeline = SyncPipeline(self._transport)
+        self.reports = SyncReports(self._transport)
+        self.token_monitor = SyncTokenMonitor(self._transport)
+        self.v3_analytics = SyncV3Analytics(self._transport)
 
         # Ops resources
         self.ops = SyncOps(self._transport)
@@ -161,6 +177,14 @@ class AsyncAegisClient:
         self.multimodal = AsyncMultimodal(self._transport)
         self.evolution = AsyncEvolution(self._transport)
         self.saber = AsyncSaber(self._transport)
+        self.dreamdojo = AsyncDreamDojo(self._transport)
+        self.military = AsyncMilitary(self._transport)
+        self.guard_model = AsyncGuardModel(self._transport)
+        self.korean = AsyncKorean(self._transport)
+        self.pipeline = AsyncPipeline(self._transport)
+        self.reports = AsyncReports(self._transport)
+        self.token_monitor = AsyncTokenMonitor(self._transport)
+        self.v3_analytics = AsyncV3Analytics(self._transport)
 
         # Ops resources
         self.ops = AsyncOps(self._transport)

@@ -36,6 +36,14 @@ public final class AegisClient implements AutoCloseable {
     private volatile OpsResource opsResource;
     private volatile ApiKeysResource apiKeysResource;
     private volatile OrchestrationResource orchestrationResource;
+    private volatile DreamdojoResource dreamdojoResource;
+    private volatile MilitaryResource militaryResource;
+    private volatile GuardModelResource guardModelResource;
+    private volatile KoreanResource koreanResource;
+    private volatile PipelineResource pipelineResource;
+    private volatile ReportsResource reportsResource;
+    private volatile TokenMonitorResource tokenMonitorResource;
+    private volatile V3AnalyticsResource v3AnalyticsResource;
 
     private AegisClient(ClientConfig config) {
         this.transport = new Transport(config);
@@ -361,6 +369,118 @@ public final class AegisClient implements AutoCloseable {
                 if (r == null) {
                     r = new OrchestrationResource(transport);
                     orchestrationResource = r;
+                }
+            }
+        }
+        return r;
+    }
+
+    public DreamdojoResource dreamdojo() {
+        DreamdojoResource r = dreamdojoResource;
+        if (r == null) {
+            synchronized (this) {
+                r = dreamdojoResource;
+                if (r == null) {
+                    r = new DreamdojoResource(transport);
+                    dreamdojoResource = r;
+                }
+            }
+        }
+        return r;
+    }
+
+    public MilitaryResource military() {
+        MilitaryResource r = militaryResource;
+        if (r == null) {
+            synchronized (this) {
+                r = militaryResource;
+                if (r == null) {
+                    r = new MilitaryResource(transport);
+                    militaryResource = r;
+                }
+            }
+        }
+        return r;
+    }
+
+    public GuardModelResource guardModel() {
+        GuardModelResource r = guardModelResource;
+        if (r == null) {
+            synchronized (this) {
+                r = guardModelResource;
+                if (r == null) {
+                    r = new GuardModelResource(transport);
+                    guardModelResource = r;
+                }
+            }
+        }
+        return r;
+    }
+
+    public KoreanResource korean() {
+        KoreanResource r = koreanResource;
+        if (r == null) {
+            synchronized (this) {
+                r = koreanResource;
+                if (r == null) {
+                    r = new KoreanResource(transport);
+                    koreanResource = r;
+                }
+            }
+        }
+        return r;
+    }
+
+    public PipelineResource pipeline() {
+        PipelineResource r = pipelineResource;
+        if (r == null) {
+            synchronized (this) {
+                r = pipelineResource;
+                if (r == null) {
+                    r = new PipelineResource(transport);
+                    pipelineResource = r;
+                }
+            }
+        }
+        return r;
+    }
+
+    public ReportsResource reports() {
+        ReportsResource r = reportsResource;
+        if (r == null) {
+            synchronized (this) {
+                r = reportsResource;
+                if (r == null) {
+                    r = new ReportsResource(transport);
+                    reportsResource = r;
+                }
+            }
+        }
+        return r;
+    }
+
+    public TokenMonitorResource tokenMonitor() {
+        TokenMonitorResource r = tokenMonitorResource;
+        if (r == null) {
+            synchronized (this) {
+                r = tokenMonitorResource;
+                if (r == null) {
+                    r = new TokenMonitorResource(transport);
+                    tokenMonitorResource = r;
+                }
+            }
+        }
+        return r;
+    }
+
+    public V3AnalyticsResource v3Analytics() {
+        V3AnalyticsResource r = v3AnalyticsResource;
+        if (r == null) {
+            synchronized (this) {
+                r = v3AnalyticsResource;
+                if (r == null) {
+                    r = new V3AnalyticsResource(transport);
+                    v3AnalyticsResource = r;
                 }
             }
         }

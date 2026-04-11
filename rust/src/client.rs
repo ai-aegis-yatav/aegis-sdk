@@ -114,6 +114,38 @@ impl AegisClient {
         crate::resources::OrchestrationResource::new(Arc::clone(&self.transport))
     }
 
+    pub fn dreamdojo(&self) -> Dreamdojo {
+        Dreamdojo::new(Arc::clone(&self.transport))
+    }
+
+    pub fn military(&self) -> Military {
+        Military::new(Arc::clone(&self.transport))
+    }
+
+    pub fn guard_model(&self) -> GuardModel {
+        GuardModel::new(Arc::clone(&self.transport))
+    }
+
+    pub fn korean(&self) -> Korean {
+        Korean::new(Arc::clone(&self.transport))
+    }
+
+    pub fn pipeline(&self) -> Pipeline {
+        Pipeline::new(Arc::clone(&self.transport))
+    }
+
+    pub fn reports(&self) -> Reports {
+        Reports::new(Arc::clone(&self.transport))
+    }
+
+    pub fn token_monitor(&self) -> TokenMonitor {
+        TokenMonitor::new(Arc::clone(&self.transport))
+    }
+
+    pub fn v3_analytics(&self) -> V3Analytics {
+        V3Analytics::new(Arc::clone(&self.transport))
+    }
+
     pub fn quota(&self) -> Option<QuotaInfo> {
         self.transport.last_quota()
     }

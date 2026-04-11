@@ -1,6 +1,6 @@
 # AEGIS Guard for OpenClaw
 
-Enterprise-grade AI agent defense plugin for [OpenClaw](https://github.com/openclaw/openclaw), powered by the [AEGIS PALADIN](https://aegis.ai) 6-layer defense pipeline.
+Enterprise-grade AI agent defense plugin for [OpenClaw](https://github.com/openclaw/openclaw), powered by the [AEGIS PALADIN](https://aiaegis.io) 6-layer defense pipeline.
 
 ## Why AEGIS Guard?
 
@@ -48,7 +48,7 @@ All configuration is via environment variables:
 | Variable | Default | Description |
 |---|---|---|
 | `AEGIS_API_KEY` | *(required)* | Your AEGIS API key |
-| `AEGIS_BASE_URL` | `https://api.aegis.ai` | API base URL (for self-hosted) |
+| `AEGIS_BASE_URL` | `https://api.aiaegis.io` | API base URL (for self-hosted) |
 | `AEGIS_GUARD_MODE` | `balanced` | `strict` / `balanced` / `permissive` |
 | `AEGIS_TIMEOUT` | `5000` | Request timeout in ms |
 | `AEGIS_MAX_RETRIES` | `2` | Max retries per request |
@@ -139,7 +139,7 @@ This plugin works with all AEGIS tiers, with features scaling by tier:
 | Reasoning hijack | - | - | Yes |
 | Anomaly detection | - | - | Yes |
 
-Get a free API key at [aegis.ai](https://aegis.ai).
+Get a free API key at [aiaegis.io](https://aiaegis.io).
 
 ## Development
 

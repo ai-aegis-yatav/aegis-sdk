@@ -243,12 +243,48 @@ export AEGIS_API_KEY="aegis_sk_..."
 
 For full documentation, see [`integrations/openclaw/README.md`](./integrations/openclaw/README.md).
 
+## Quickstart Examples
+
+각 언어의 `examples/quickstart/` 디렉토리에 git clone 후 즉시 동작하는 최소 예제가 있습니다.
+
+```bash
+# 환경 변수 설정 후 언어별 quickstart 실행
+export AEGIS_API_KEY=aegis_sk_...
+
+make sdk-quickstart-javascript
+make sdk-quickstart-python
+make sdk-quickstart-go
+make sdk-quickstart-rust
+make sdk-quickstart-java
+```
+
+## Endpoint Coverage & Codegen
+
+모든 SDK는 `openapi/openapi.json`(151개 엔드포인트)을 **단일 진실의 소스**로
+사용합니다. 각 SDK는 두 계층으로 구성됩니다:
+
+1. **자동 생성된 저수준 클라이언트** (`src/.../generated/`) — 151개 EP 전체를 커버.
+   `bash sdks/{lang}/scripts/codegen.sh`로 재생성.
+2. **수작업 고수준 리소스 계층** (`src/.../resources/`) — 도메인 친화적 메서드명,
+   자동 페이지네이션, 스트리밍, 타입 안전 에러.
+
+### API가 변경될 때
+
+```bash
+make sdk-openapi          # apps/api → openapi/openapi.json 재생성
+make sdk-codegen          # 5개 언어 저수준 클라이언트 재생성
+make sdk-build            # 전체 빌드
+make sdk-validate         # drift 검증 + 빌드 + 테스트 (CI에서 사용)
+```
+
+자세한 내용은 [`openapi/README.md`](./openapi/README.md) 참조.
+
 ## Documentation
 
 - **Full Documentation**: [docs.aiaegis.io](https://docs.aiaegis.io)
 - **API Reference**: [docs.aiaegis.io/api](https://docs.aiaegis.io/api)
 - **Dashboard**: [app.aiaegis.io](https://app.aiaegis.io)
-- **OpenAPI Spec**: [`openapi/openapi.json`](./openapi/openapi.json)
+- **OpenAPI Spec**: [`openapi/openapi.json`](./openapi/openapi.json) — single source of truth
 
 ## License
 

@@ -1,136 +1,110 @@
-import { getClient } from "../aegis-client.js";
+import { aegisApi } from "../aegis-client.js";
 import { GuardCache, cacheKey } from "../cache.js";
+import { localToolGuard } from "./local-fallback.js";
 import type {
   AegisGuardConfig,
   GuardResult,
-  ToolExecutionContext,
   OpenClawPluginAPI,
 } from "../types.js";
 
 const GUARD_NAME = "tool";
+const TAG = "[aegis-guard:tool]";
 
-/**
- * Registers the tool execution guard on the `preToolExecution` phase.
- *
- * Before every tool call this hook:
- *  1. Runs AEGIS `POST /v3/agent/toolchain` to detect STAC (Sequential Tool
- *     Abuse Chain) attacks across the full chain.
- *  2. Runs AEGIS `POST /v3/agent/tool-disguise` on the current invocation to
- *     detect iMIST progressive-escalation and tool-impersonation attacks.
- *  3. Merges both risk scores and applies the configured thresholds.
- */
 export function registerToolGuard(
   api: OpenClawPluginAPI,
   config: AegisGuardConfig,
   cache: GuardCache,
 ): void {
-  api.lifecycle.on<ToolExecutionContext>(
-    "preToolExecution",
-    async (ctx) => {
-      const toolName = ctx.invocation.tool.name;
-      const chainNames = ctx.toolChain.map(t => t.name);
-      const key = cacheKey(GUARD_NAME, ctx.session.id, ...chainNames, toolName);
+  const log = api.logger;
 
-      const cached = cache.get(key);
-      if (cached) {
-        if (cached.action === "block") ctx.block(cached.reason ?? "Blocked by AEGIS Guard");
-        return;
+  api.on("before_tool_call", async (event: any, _ctx: any) => {
+    const toolName = event?.toolName ?? "unknown";
+    const params = event?.params;
+    log.info(`${TAG} ━━━ CHECKING tool call ━━━`);
+    log.info(`${TAG} tool="${toolName}" params=${JSON.stringify(params ?? {}).slice(0, 200)}`);
+
+    const key = cacheKey(GUARD_NAME, toolName, JSON.stringify(params ?? {}));
+    const cached = cache.get(key);
+    if (cached) {
+      log.info(`${TAG} cache HIT action=${cached.action} risk=${cached.riskScore.toFixed(2)}`);
+      if (cached.action === "block") {
+        log.warn(`${TAG} 🛑 BLOCKED (cached) tool="${toolName}" reason=${cached.reason}`);
+        return { block: true, blockReason: cached.reason ?? "Blocked by AEGIS Guard" };
       }
+      log.info(`${TAG} ✅ ALLOWED (cached) tool="${toolName}"`);
+      return;
+    }
 
-      const result = await analyzeToolExecution(ctx, config);
-      cache.set(key, result);
+    const apiResult = await analyzeToolCall(toolName, params, config, log);
+    const localResult = localToolGuard([toolName], JSON.stringify(params ?? {}));
 
-      if (result.action === "block") {
-        ctx.block(result.reason ?? "Blocked by AEGIS Guard");
-      }
-    },
-    { priority: 0, timeout: config.timeout },
-  );
+    log.info(`${TAG} API: action=${apiResult.action} risk=${apiResult.riskScore.toFixed(2)}`);
+    log.info(`${TAG} Local: action=${localResult.action} risk=${localResult.riskScore.toFixed(2)}`);
 
-  api.log.info("[aegis-guard] tool guard registered (preToolExecution)");
+    const result = (apiResult.action !== "allow")
+      ? apiResult
+      : (localResult.action === "block") ? localResult : apiResult;
+
+    cache.set(key, result);
+
+    const icon = result.action === "block" ? "🛑" : "✅";
+    log.info(`${TAG} ━━━ RESULT: ${icon} ${result.action.toUpperCase()} ━━━`);
+    log.info(`${TAG} risk=${result.riskScore.toFixed(2)} latency=${result.latencyMs}ms`);
+    if (result.reason) log.warn(`${TAG} reason: ${result.reason}`);
+
+    if (result.action === "block") {
+      return { block: true, blockReason: result.reason ?? "Blocked by AEGIS Guard" };
+    }
+  });
+
+  log.info(`${TAG} registered (before_tool_call)`);
 }
 
-async function analyzeToolExecution(
-  ctx: ToolExecutionContext,
+async function analyzeToolCall(
+  toolName: string,
+  params: any,
   config: AegisGuardConfig,
+  log: OpenClawPluginAPI["logger"],
 ): Promise<GuardResult> {
   const start = Date.now();
-  const aegis = getClient();
 
-  const [chainResult, disguiseResult] = await Promise.allSettled([
-    analyzeChain(aegis, ctx, config),
-    analyzeDisguise(aegis, ctx),
-  ]);
-
-  const chainRisk = chainResult.status === "fulfilled" ? chainResult.value : 0;
-  const disguiseRisk = disguiseResult.status === "fulfilled" ? disguiseResult.value : 0;
-  const combinedRisk = Math.min(1, Math.max(chainRisk, disguiseRisk));
-
-  const reasons: string[] = [];
-  if (chainResult.status === "fulfilled" && chainRisk >= config.riskThresholds.escalate) {
-    reasons.push(`tool-chain risk=${chainRisk.toFixed(2)}`);
-  }
-  if (disguiseResult.status === "fulfilled" && disguiseRisk >= config.riskThresholds.escalate) {
-    reasons.push(`tool-disguise risk=${disguiseRisk.toFixed(2)}`);
+  if (config.deniedTools.length && config.deniedTools.includes(toolName)) {
+    log.warn(`${TAG} tool "${toolName}" is in deny list`);
+    return {
+      action: "block",
+      reason: `Tool "${toolName}" is denied by policy`,
+      riskScore: 1.0,
+      details: { source: "deny-list" },
+      latencyMs: Date.now() - start,
+    };
   }
 
-  return {
-    action: combinedRisk >= config.riskThresholds.block
-      ? "block"
-      : combinedRisk >= config.riskThresholds.escalate
-        ? "escalate"
+  try {
+    log.info(`${TAG} calling AEGIS /v3/agent/tool-disguise ...`);
+    const res: any = await aegisApi.toolDisguise({
+      tool_name: toolName,
+      tool_description: "",
+      tool_input: JSON.stringify(params ?? {}),
+      previous_invocations: [],
+      tool_catalog: [],
+    });
+
+    const riskScore = res.risk_score ?? 0;
+    log.info(`${TAG} tool-disguise → risk=${riskScore.toFixed(2)} disguised=${res.is_disguised ?? false} type=${res.disguise_type ?? "none"}`);
+
+    return {
+      action: riskScore >= config.riskThresholds.block ? "block"
+        : riskScore >= config.riskThresholds.escalate ? "escalate"
         : "allow",
-    reason: reasons.length ? reasons.join("; ") : undefined,
-    riskScore: combinedRisk,
-    details: { chainRisk, disguiseRisk },
-    latencyMs: Date.now() - start,
-  };
-}
-
-async function analyzeChain(
-  aegis: ReturnType<typeof getClient>,
-  ctx: ToolExecutionContext,
-  config: AegisGuardConfig,
-): Promise<number> {
-  const tools = ctx.toolChain.map(t => ({
-    name: t.name,
-    description: t.description ?? "",
-  }));
-
-  const res = await aegis.agent.toolchain({
-    tools,
-    execution_plan: ctx.toolChain.map(t => t.name),
-    context: {
-      privilege_level: ctx.agent.privilegeLevel ?? config.defaultPrivilegeLevel,
-      allowed_tools: config.allowedTools,
-      denied_tools: config.deniedTools,
-    },
-  });
-
-  if (!res.is_safe) {
-    const level = (res.risk_level ?? "").toLowerCase();
-    if (level === "critical") return 0.95;
-    if (level === "high") return 0.75;
-    if (level === "medium") return 0.5;
-    return 0.35;
+      reason: riskScore >= config.riskThresholds.escalate
+        ? `Tool disguise risk=${riskScore.toFixed(2)} type=${res.disguise_type ?? "unknown"}`
+        : undefined,
+      riskScore,
+      details: { source: "v3/agent/tool-disguise" },
+      latencyMs: Date.now() - start,
+    };
+  } catch (err) {
+    log.warn(`${TAG} tool-disguise API failed: ${String(err)} — allowing`);
+    return { action: "allow", riskScore: 0, details: { source: "fallback" }, latencyMs: Date.now() - start };
   }
-  return 0;
-}
-
-async function analyzeDisguise(
-  aegis: ReturnType<typeof getClient>,
-  ctx: ToolExecutionContext,
-): Promise<number> {
-  const res = await aegis.agent.toolDisguise({
-    tool_name: ctx.invocation.tool.name,
-    tool_description: ctx.invocation.tool.description ?? "",
-    tool_input: JSON.stringify(ctx.invocation.arguments),
-    previous_invocations: ctx.previousInvocations.map(inv => ({
-      tool_name: inv.tool.name,
-      arguments: inv.arguments,
-    })),
-    tool_catalog: ctx.toolChain.map(t => t.name),
-  });
-
-  return (res as Record<string, unknown>).risk_score as number ?? 0;
 }

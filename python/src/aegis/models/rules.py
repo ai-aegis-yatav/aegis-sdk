@@ -52,6 +52,8 @@ class RuleTestRequest(BaseModel):
 
 
 class RuleTestResponse(BaseModel):
-    matched: bool
-    matched_rules: List[Dict[str, Any]] = Field(default_factory=list)
+    model_config = {"extra": "allow"}
+    matches: List[Dict[str, Any]] = Field(default_factory=list)
+    matched: Optional[bool] = None
+    matched_rules: Optional[List[Dict[str, Any]]] = None
     details: Optional[Dict[str, Any]] = None

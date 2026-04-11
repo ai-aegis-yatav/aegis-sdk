@@ -1,3 +1,6 @@
+[workspace]
+# Standalone package — not part of the AEGIS Rust monorepo workspace.
+
 [package]
 name = "aegis-sdk"
 version = "0.1.0"

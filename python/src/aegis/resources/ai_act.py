@@ -18,24 +18,38 @@ def _bytes_of(content: str) -> List[int]:
     return list(content.encode("utf-8"))
 
 
+def _ai_model_default() -> Dict[str, Any]:
+    from datetime import datetime, timezone
+    return {
+        "model_id": "aegis-smoke-model",
+        "model_name": "smoke-test",
+        "model_version": "1.0",
+        "provider": "aegis",
+        "generation_timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+    }
+
+
+def _service_provider_default() -> Dict[str, Any]:
+    return {
+        "provider_id": "aegis-smoke",
+        "organization_name": "AEGIS Smoke Test",
+        "business_registration_number": "000-00-00000",
+        "contact_email": "smoke@aegis.test",
+    }
+
+
 def _watermark_body(content: str, **overrides: Any) -> Dict[str, Any]:
     body: Dict[str, Any] = {
         "content_type": "text",
         "content": _bytes_of(content),
-        "ai_model": {
-            "model_name": "smoke-test",
-            "model_version": "1.0",
-            "model_type": "text-generation",
-            "provider": "aegis",
-        },
-        "service_provider": {
-            "provider_name": "smoke-test",
-            "provider_id": "aegis-smoke",
-        },
+        "ai_model": _ai_model_default(),
+        "service_provider": _service_provider_default(),
         "risk_level": "limited",
         "watermark_config": {
-            "method": "invisible",
+            "visible_watermark": False,
+            "invisible_watermark": True,
             "strength": 0.5,
+            "multi_layer": False,
         },
     }
     body.update(overrides)
@@ -44,23 +58,21 @@ def _watermark_body(content: str, **overrides: Any) -> Dict[str, Any]:
 
 def _high_impact_body(content: str, **overrides: Any) -> Dict[str, Any]:
     body: Dict[str, Any] = {
-        "domain": "education",
+        "domain": "medical",
         "content_type": "text",
         "content": _bytes_of(content),
-        "ai_model": {
-            "model_name": "smoke-test",
-            "model_version": "1.0",
-            "model_type": "text-generation",
-            "provider": "aegis",
-        },
+        "ai_model": _ai_model_default(),
         "risk_assessment": {
-            "risk_level": "high",
-            "impact_areas": ["education"],
+            "impact_score": 0.6,
+            "potential_harm": ["misinformation"],
+            "mitigation_measures": ["human_review"],
+            "human_oversight_required": True,
         },
         "watermark_config": {
-            "method": "invisible",
-            "strength": 0.9,
-            "high_impact": True,
+            "enforce_multi_layer": True,
+            "minimum_strength": 0.7,
+            "preserve_low_entropy": True,
+            "semantic_preservation": True,
         },
     }
     body.update(overrides)
@@ -123,11 +135,11 @@ class SyncAiAct(SyncResource):
 
     def high_impact_watermark(self, content: str, **kwargs: Any) -> Dict[str, Any]:
         return self._post(
-            "/v1/ai-act/high-impact-watermark", json=_high_impact_body(content, **kwargs)
+            "/v1/ai-act/high-impact/watermark", json=_high_impact_body(content, **kwargs)
         )
 
     def deepfake_label(self, **kwargs: Any) -> Dict[str, Any]:
-        return self._post("/v1/ai-act/deepfake-label", json=kwargs)
+        return self._post("/v1/ai-act/deepfake/label", json=kwargs)
 
     def verify(self, content: str, **kwargs: Any) -> Dict[str, Any]:
         return self._post("/v1/ai-act/verify", json=_verify_body(content, **kwargs))
@@ -140,19 +152,19 @@ class SyncAiAct(SyncResource):
 
     def guardrail_check(self, content: str, **kwargs: Any) -> Dict[str, Any]:
         return self._post(
-            "/v1/ai-act/guardrail-check", json=_guardrail_body(content, **kwargs)
+            "/v1/ai-act/guardrail/check", json=_guardrail_body(content, **kwargs)
         )
 
     def pii_detect(self, content: str, **kwargs: Any) -> Dict[str, Any]:
-        return self._post("/v1/ai-act/pii-detect", json=_pii_body(content, **kwargs))
+        return self._post("/v1/ai-act/pii/detect", json=_pii_body(content, **kwargs))
 
     def risk_assess(self, system_description: str, **kwargs: Any) -> Dict[str, Any]:
         return self._post(
-            "/v1/ai-act/risk-assess", json=_risk_assess_body(system_description, **kwargs)
+            "/v1/ai-act/risk/assess", json=_risk_assess_body(system_description, **kwargs)
         )
 
     def audit_logs(self, **params: Any) -> Dict[str, Any]:
-        return self._get("/v1/ai-act/audit-logs", params=params)
+        return self._get("/v1/ai-act/audit/logs", params=params)
 
 
 class AsyncAiAct(AsyncResource):
@@ -164,11 +176,11 @@ class AsyncAiAct(AsyncResource):
 
     async def high_impact_watermark(self, content: str, **kwargs: Any) -> Dict[str, Any]:
         return await self._post(
-            "/v1/ai-act/high-impact-watermark", json=_high_impact_body(content, **kwargs)
+            "/v1/ai-act/high-impact/watermark", json=_high_impact_body(content, **kwargs)
         )
 
     async def deepfake_label(self, **kwargs: Any) -> Dict[str, Any]:
-        return await self._post("/v1/ai-act/deepfake-label", json=kwargs)
+        return await self._post("/v1/ai-act/deepfake/label", json=kwargs)
 
     async def verify(self, content: str, **kwargs: Any) -> Dict[str, Any]:
         return await self._post("/v1/ai-act/verify", json=_verify_body(content, **kwargs))
@@ -181,18 +193,18 @@ class AsyncAiAct(AsyncResource):
 
     async def guardrail_check(self, content: str, **kwargs: Any) -> Dict[str, Any]:
         return await self._post(
-            "/v1/ai-act/guardrail-check", json=_guardrail_body(content, **kwargs)
+            "/v1/ai-act/guardrail/check", json=_guardrail_body(content, **kwargs)
         )
 
     async def pii_detect(self, content: str, **kwargs: Any) -> Dict[str, Any]:
         return await self._post(
-            "/v1/ai-act/pii-detect", json=_pii_body(content, **kwargs)
+            "/v1/ai-act/pii/detect", json=_pii_body(content, **kwargs)
         )
 
     async def risk_assess(self, system_description: str, **kwargs: Any) -> Dict[str, Any]:
         return await self._post(
-            "/v1/ai-act/risk-assess", json=_risk_assess_body(system_description, **kwargs)
+            "/v1/ai-act/risk/assess", json=_risk_assess_body(system_description, **kwargs)
         )
 
     async def audit_logs(self, **params: Any) -> Dict[str, Any]:
-        return await self._get("/v1/ai-act/audit-logs", params=params)
+        return await self._get("/v1/ai-act/audit/logs", params=params)

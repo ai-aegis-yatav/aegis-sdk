@@ -50,6 +50,11 @@ public abstract class BaseResource {
         return JsonUtil.deserialize(json, responseType);
     }
 
+    protected <T> T put(String path, Object body, TypeReference<T> typeRef) {
+        String json = transport.put(path, body);
+        return JsonUtil.deserialize(json, typeRef);
+    }
+
     protected String putRaw(String path, Object body) {
         return transport.put(path, body);
     }
@@ -57,6 +62,33 @@ public abstract class BaseResource {
     protected <T> T delete(String path, Class<T> responseType) {
         String json = transport.delete(path);
         return JsonUtil.deserialize(json, responseType);
+    }
+
+    protected <T> T patch(String path, Object body, Class<T> responseType) {
+        String json = transport.patch(path, body);
+        return JsonUtil.deserialize(json, responseType);
+    }
+
+    protected <T> T patch(String path, Object body, TypeReference<T> typeRef) {
+        String json = transport.patch(path, body);
+        return JsonUtil.deserialize(json, typeRef);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected Map<String, Object> patchMap(String path, Object body) {
+        return patch(path, body, new TypeReference<Map<String, Object>>() {});
+    }
+
+    protected String buildQueryPath(String base, Map<String, Object> params) {
+        if (params == null || params.isEmpty()) return base;
+        StringBuilder sb = new StringBuilder(base).append("?");
+        boolean first = true;
+        for (Map.Entry<String, Object> entry : params.entrySet()) {
+            if (!first) sb.append("&");
+            sb.append(entry.getKey()).append("=").append(entry.getValue());
+            first = false;
+        }
+        return sb.toString();
     }
 
     protected void deleteVoid(String path) {

@@ -1,174 +1,170 @@
-import { getClient } from "../aegis-client.js";
+import { aegisApi } from "../aegis-client.js";
 import { GuardCache, cacheKey } from "../cache.js";
+import { localPromptGuard } from "./local-fallback.js";
+import { formatOutputReport, maskContent } from "./report-formatter.js";
 import type {
   AegisGuardConfig,
   GuardResult,
-  ToolOutputContext,
-  MessageSendContext,
   OpenClawPluginAPI,
 } from "../types.js";
 
-const GUARD_POST_TOOL = "output-tool";
-const GUARD_PRE_SEND = "output-send";
+const TAG_TOOL = "[aegis-guard:output-tool]";
+const TAG_SEND = "[aegis-guard:output-send]";
 
-/**
- * Registers two output-facing guards:
- *
- *  1. `postToolExecution` — scans tool output for Indirect Prompt Injection
- *     (IPI) payloads before they reach the LLM by calling AEGIS
- *     `POST /v3/agent/scan` with the output as `external_data`.
- *
- *  2. `preMessageSend` — runs a final safety check on the agent's outbound
- *     reply via AEGIS `POST /v2/safety/check` to catch PII leaks, harmful
- *     content, or data exfiltration in the generated response.
- */
 export function registerOutputGuard(
   api: OpenClawPluginAPI,
   config: AegisGuardConfig,
   cache: GuardCache,
 ): void {
-  // --- postToolExecution: IPI in tool output ---
-  api.lifecycle.on<ToolOutputContext>(
-    "postToolExecution",
-    async (ctx) => {
-      if (!ctx.output) return;
+  const log = api.logger;
 
-      const key = cacheKey(GUARD_POST_TOOL, ctx.session.id, ctx.output.slice(0, 512));
-      const cached = cache.get(key);
-      if (cached) {
-        applyToolOutputAction(ctx, cached);
-        return;
+  // --- after_tool_call: IPI scan on tool output ---
+  api.on("after_tool_call", async (event: any, _ctx: any) => {
+    const toolName = event?.toolName ?? "unknown";
+    const result = event?.result;
+    const output = typeof result === "string" ? result : JSON.stringify(result ?? "").slice(0, 500);
+    if (!output) return;
+
+    log.info(`${TAG_TOOL} ━━━ SCANNING tool output ━━━`);
+    log.info(`${TAG_TOOL} tool="${toolName}" output_len=${output.length}`);
+    log.info(`${TAG_TOOL} preview: "${output.slice(0, 120)}${output.length > 120 ? "..." : ""}"`);
+
+    const key = cacheKey("output-tool", toolName, output.slice(0, 256));
+    const cached = cache.get(key);
+    if (cached) {
+      log.info(`${TAG_TOOL} cache HIT action=${cached.action} risk=${cached.riskScore.toFixed(2)}`);
+      return;
+    }
+
+    const apiResult = await scanToolOutput(toolName, output, config, log);
+    const localResult = localPromptGuard(output);
+
+    log.info(`${TAG_TOOL} API: action=${apiResult.action} risk=${apiResult.riskScore.toFixed(2)}`);
+    log.info(`${TAG_TOOL} Local: action=${localResult.action} risk=${localResult.riskScore.toFixed(2)}`);
+
+    const scanResult = (apiResult.action !== "allow")
+      ? apiResult
+      : (localResult.action === "block") ? localResult : apiResult;
+
+    cache.set(key, scanResult);
+
+    const icon = scanResult.action === "block" ? "🛑" : "✅";
+    log.info(`${TAG_TOOL} ━━━ RESULT: ${icon} ${scanResult.action.toUpperCase()} ━━━`);
+    log.info(`${TAG_TOOL} risk=${scanResult.riskScore.toFixed(2)} latency=${scanResult.latencyMs}ms`);
+    if (scanResult.reason) log.warn(`${TAG_TOOL} IPI detected: ${scanResult.reason}`);
+  });
+
+  // --- message_sending: final outbound safety gate ---
+  api.on("message_sending", async (event: any, _ctx: any) => {
+    const content = event?.content;
+    if (!content) return;
+
+    // Skip if content is an AEGIS report itself (prevent infinite loop)
+    if (content.includes("AEGIS Guard")) return;
+
+    log.info(`${TAG_SEND} ━━━ SCANNING outbound reply ━━━`);
+    log.info(`${TAG_SEND} len=${content.length} to=${event?.to ?? "unknown"}`);
+    log.info(`${TAG_SEND} preview: "${content.slice(0, 120)}${content.length > 120 ? "..." : ""}"`);
+
+    const key = cacheKey("output-send", content.slice(0, 256));
+    const cached = cache.get(key);
+    if (cached) {
+      log.info(`${TAG_SEND} cache HIT action=${cached.action} risk=${cached.riskScore.toFixed(2)}`);
+      if (cached.action === "block") {
+        const report = formatOutputReport(cached);
+        log.warn(`${TAG_SEND} 🛑 BLOCKED outbound (cached)`);
+        return { content: report };
       }
-
-      const result = await scanToolOutput(ctx, config);
-      cache.set(key, result);
-      applyToolOutputAction(ctx, result);
-    },
-    { priority: 0, timeout: config.timeout },
-  );
-
-  // --- preMessageSend: final safety gate ---
-  api.lifecycle.on<MessageSendContext>(
-    "preMessageSend",
-    async (ctx) => {
-      const content = ctx.message.content;
-      if (!content) return;
-
-      const key = cacheKey(GUARD_PRE_SEND, ctx.session.id, content.slice(0, 512));
-      const cached = cache.get(key);
-      if (cached) {
-        applyMessageSendAction(ctx, cached);
-        return;
+      if (cached.action === "modify") {
+        const report = formatOutputReport(cached);
+        return { content: report };
       }
+      return;
+    }
 
-      const result = await checkSafety(content, config);
-      cache.set(key, result);
-      applyMessageSendAction(ctx, result);
-    },
-    { priority: 10, timeout: config.timeout },
-  );
+    const result = await checkSafety(content, config, log);
+    cache.set(key, result);
 
-  api.log.info("[aegis-guard] output guard registered (postToolExecution + preMessageSend)");
+    const icon = result.action === "block" ? "🛑" : result.action === "modify" ? "✏️" : "✅";
+    log.info(`${TAG_SEND} ━━━ RESULT: ${icon} ${result.action.toUpperCase()} ━━━`);
+    log.info(`${TAG_SEND} risk=${result.riskScore.toFixed(2)} latency=${result.latencyMs}ms`);
+    if (result.reason) log.warn(`${TAG_SEND} reason: ${result.reason}`);
+
+    if (result.action === "block") {
+      const report = formatOutputReport(result);
+      return { content: report };
+    }
+    if (result.action === "modify") {
+      const report = formatOutputReport(result);
+      return { content: report };
+    }
+  });
+
+  log.info("[aegis-guard:output] registered (after_tool_call + message_sending)");
 }
-
-// ---------------------------------------------------------------------------
-// Tool output IPI scan
-// ---------------------------------------------------------------------------
 
 async function scanToolOutput(
-  ctx: ToolOutputContext,
+  toolName: string,
+  output: string,
   config: AegisGuardConfig,
+  log: OpenClawPluginAPI["logger"],
 ): Promise<GuardResult> {
   const start = Date.now();
-  const aegis = getClient();
-
   try {
-    const res = await aegis.agent.scan({
-      prompt: `Tool "${ctx.invocation.tool.name}" returned output`,
-      tools: [ctx.output],
-      context: { session_id: ctx.session.id, scan_type: "ipi_tool_output" },
+    log.info(`${TAG_TOOL} calling AEGIS /v3/agent/scan (IPI mode) ...`);
+    const res: any = await aegisApi.agentScan({
+      prompt: `Tool "${toolName}" returned output`,
+      tools: [output],
+      context: { scan_type: "ipi_tool_output" },
     });
 
-    const riskScore = res.confidence;
+    const threats = res.threats ?? [];
+    const topThreat = threats[0];
+    const riskScore = topThreat?.confidence ?? 0;
+    const injectionDetected = !res.is_safe && threats.length > 0;
+    const injectionType = topThreat?.threat_type ?? "none";
+    log.info(`${TAG_TOOL} IPI scan → is_safe=${res.is_safe} threats=${threats.length} confidence=${riskScore.toFixed(2)}`);
     return {
-      action: res.injection_detected && riskScore >= config.riskThresholds.block
-        ? "block"
-        : res.injection_detected && riskScore >= config.riskThresholds.escalate
-          ? "escalate"
-          : "allow",
-      reason: res.injection_detected
-        ? `IPI in tool output: ${res.injection_type} (confidence=${riskScore.toFixed(2)})`
-        : undefined,
+      action: injectionDetected && riskScore >= config.riskThresholds.block
+        ? "block" : "allow",
+      reason: injectionDetected
+        ? `IPI in tool output: ${injectionType} (confidence=${riskScore.toFixed(2)})` : undefined,
       riskScore,
-      details: { source: "v3/agent/scan:ipi", toolName: ctx.invocation.tool.name },
+      details: { source: "v3/agent/scan:ipi", toolName },
       latencyMs: Date.now() - start,
     };
-  } catch {
-    return {
-      action: "allow",
-      riskScore: 0,
-      details: { source: "fallback" },
-      latencyMs: Date.now() - start,
-    };
+  } catch (err) {
+    log.warn(`${TAG_TOOL} IPI scan failed: ${String(err)}`);
+    return { action: "allow", riskScore: 0, details: { source: "fallback" }, latencyMs: Date.now() - start };
   }
 }
-
-// ---------------------------------------------------------------------------
-// Final outbound safety check
-// ---------------------------------------------------------------------------
 
 async function checkSafety(
   content: string,
   config: AegisGuardConfig,
+  log: OpenClawPluginAPI["logger"],
 ): Promise<GuardResult> {
   const start = Date.now();
-  const aegis = getClient();
-
   try {
-    const res = await aegis.safety.check({ content });
-    const riskScore = res.overall_score;
+    log.info(`${TAG_SEND} calling AEGIS /v2/safety/check ...`);
+    const res: any = await aegisApi.safetyCheck({ text: content });
+    const riskScore = res.confidence ?? 0;
+    const categories = res.categories ?? [];
+    log.info(`${TAG_SEND} safety → safe=${res.is_safe} score=${riskScore.toFixed(2)} categories=[${categories.join(", ")}]`);
 
     return {
       action: !res.is_safe && riskScore >= config.riskThresholds.block
         ? "block"
         : !res.is_safe && riskScore >= config.riskThresholds.escalate
-          ? "modify"
-          : "allow",
+          ? "modify" : "allow",
       reason: !res.is_safe
-        ? `Safety issue: ${res.flagged_categories.join(", ")} (score=${riskScore.toFixed(2)})`
-        : undefined,
+        ? `Safety: ${categories.join(", ")} (score=${riskScore.toFixed(2)})` : undefined,
       riskScore,
-      details: {
-        source: "v2/safety/check",
-        flaggedCategories: res.flagged_categories,
-        backend: res.backend,
-      },
+      details: { source: "v2/safety/check" },
       latencyMs: Date.now() - start,
     };
-  } catch {
-    return {
-      action: "allow",
-      riskScore: 0,
-      details: { source: "fallback" },
-      latencyMs: Date.now() - start,
-    };
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Action application
-// ---------------------------------------------------------------------------
-
-function applyToolOutputAction(ctx: ToolOutputContext, result: GuardResult): void {
-  if (result.action === "block") {
-    ctx.replaceOutput("[AEGIS Guard] Tool output blocked — potential injection detected.");
-  }
-}
-
-function applyMessageSendAction(ctx: MessageSendContext, result: GuardResult): void {
-  if (result.action === "block") {
-    ctx.block(result.reason ?? "Blocked by AEGIS Guard");
-  } else if (result.action === "modify") {
-    ctx.replaceContent("[Content redacted by AEGIS Guard for safety reasons]");
+  } catch (err) {
+    log.warn(`${TAG_SEND} safety check failed: ${String(err)}`);
+    return { action: "allow", riskScore: 0, details: { source: "fallback" }, latencyMs: Date.now() - start };
   }
 }

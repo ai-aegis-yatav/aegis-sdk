@@ -11,7 +11,7 @@
 
 export { loadConfig } from "./config.js";
 export { GuardCache, cacheKey } from "./cache.js";
-export { initClient, getClient } from "./aegis-client.js";
+export { initClient, getClient, aegisApi } from "./aegis-client.js";
 export type * from "./types.js";
 
 import { loadConfig } from "./config.js";
@@ -25,19 +25,17 @@ import { registerReasoningGuard } from "./guards/reasoning-guard.js";
 import type { OpenClawPluginAPI } from "./types.js";
 
 /**
- * OpenClaw plugin entry point.
- *
- * Called by the OpenClaw runtime when the plugin is loaded. Reads
- * configuration from environment variables, initialises the AEGIS
- * SDK client, and registers all enabled lifecycle guards.
+ * Internal activation logic. Reads configuration from environment
+ * variables, initialises the AEGIS SDK client, and registers all
+ * enabled lifecycle guards.
  */
-export default function activate(api: OpenClawPluginAPI): void {
+function activate(api: OpenClawPluginAPI): void {
   const config = loadConfig();
   initClient(config);
 
   const cache = new GuardCache(config.cache.maxEntries, config.cache.ttlMs);
 
-  api.log.info(
+  api.logger.info(
     `[aegis-guard] activating — mode=${config.guardMode}, base=${config.baseUrl}`,
   );
 
@@ -57,5 +55,23 @@ export default function activate(api: OpenClawPluginAPI): void {
     registerReasoningGuard(api, config, cache);
   }
 
-  api.log.info("[aegis-guard] all guards registered successfully");
+  api.logger.info("[aegis-guard] all guards registered successfully");
 }
+
+/**
+ * OpenClaw plugin manifest.
+ *
+ * Conforms to the OpenClaw plugin SDK format:
+ * `{ id, name, description, register(api) }`
+ */
+const aegisGuardPlugin = {
+  id: "aegis-guard",
+  name: "AEGIS Guard — AI Agent Defense",
+  description:
+    "Enterprise-grade 6-layer defense: prompt injection, tool chain attacks, memory poisoning, reasoning hijack detection, and outbound safety — powered by AEGIS PALADIN.",
+  register(api: any) {
+    activate(api);
+  },
+};
+
+export default aegisGuardPlugin;

@@ -1,9 +1,12 @@
 {
-  "name": "@aegis-ai/guard-openclaw",
+  "name": "@aegis-ai/aegis-guard",
   "version": "0.1.0",
   "description": "AEGIS PALADIN defense plugin for OpenClaw AI agents",
   "type": "module",
   "main": "./dist/index.js",
+  "openclaw": {
+    "extensions": ["./dist/index.js"]
+  },
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
@@ -35,9 +38,9 @@
     "prompt-injection",
     "llm-safety"
   ],
-  "author": "AEGIS Team <support@aegis.ai>",
+  "author": "AEGIS Team <aegis@yatavent.com>",
   "license": "MIT",
-  "homepage": "https://aegis.ai/integrations/openclaw",
+  "homepage": "https://aiaegis.io/integrations/openclaw",
   "repository": {
     "type": "git",
     "url": "https://github.com/ai-aegis-yatav/aegis-sdk.git",

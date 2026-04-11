@@ -113,4 +113,10 @@ pub struct RuleTemplate {
     pub action: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    /// 한국어 정규식 해설 (wizard 용)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub regex_explanation_ko: Option<String>,
+    /// English regex breakdown (wizard)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub regex_explanation_en: Option<String>,
 }

@@ -1,102 +1,90 @@
-import { getClient } from "../aegis-client.js";
+import { aegisApi } from "../aegis-client.js";
 import { GuardCache, cacheKey } from "../cache.js";
+import { localPromptGuard } from "./local-fallback.js";
 import type {
   AegisGuardConfig,
   GuardResult,
-  MemoryStoreContext,
   OpenClawPluginAPI,
 } from "../types.js";
 
-const GUARD_NAME = "memory";
+const TAG = "[aegis-guard:memory]";
 
-/**
- * Registers the memory integrity guard on the `preMemoryStore` phase.
- *
- * Before new entries are persisted to the agent's long-term memory
- * this hook calls AEGIS `POST /v3/agent/memory-poisoning` to detect:
- *  - MINJA (Memory INJection Attack)
- *  - InjecMEM (direct memory manipulation)
- *  - MemoryGraft (false-history injection)
- *  - Trigger injection (conditional behaviour planting)
- */
 export function registerMemoryGuard(
   api: OpenClawPluginAPI,
   config: AegisGuardConfig,
   cache: GuardCache,
 ): void {
-  api.lifecycle.on<MemoryStoreContext>(
-    "preMemoryStore",
-    async (ctx) => {
-      if (!ctx.newEntries.length) return;
+  const log = api.logger;
 
-      const key = cacheKey(GUARD_NAME, ctx.session.id, ...ctx.newEntries);
-      const cached = cache.get(key);
-      if (cached) {
-        if (cached.action === "block") ctx.reject(cached.reason ?? "Blocked by AEGIS Guard");
-        return;
-      }
+  api.on("llm_output", async (event: any, _ctx: any) => {
+    const output = event?.output ?? event?.content ?? event?.text;
+    if (!output || typeof output !== "string") return;
 
-      const result = await analyzeMemory(ctx, config);
-      cache.set(key, result);
+    log.info(`${TAG} ━━━ SCANNING LLM output for memory safety ━━━`);
+    log.info(`${TAG} output_len=${output.length}`);
 
-      if (result.action === "block") {
-        ctx.reject(result.reason ?? "Memory poisoning detected by AEGIS Guard");
-      }
-    },
-    { priority: 0, timeout: config.timeout },
-  );
+    const key = cacheKey("memory", output.slice(0, 256));
+    const cached = cache.get(key);
+    if (cached) {
+      log.info(`${TAG} cache HIT action=${cached.action} risk=${cached.riskScore.toFixed(2)}`);
+      return;
+    }
 
-  api.log.info("[aegis-guard] memory guard registered (preMemoryStore)");
+    const apiResult = await analyzeMemory(output, config, log);
+    const localResult = localPromptGuard(output);
+
+    log.info(`${TAG} API: action=${apiResult.action} risk=${apiResult.riskScore.toFixed(2)}`);
+    log.info(`${TAG} Local: action=${localResult.action} risk=${localResult.riskScore.toFixed(2)}`);
+
+    const result = (apiResult.action !== "allow")
+      ? apiResult
+      : (localResult.action === "block") ? localResult : apiResult;
+
+    cache.set(key, result);
+
+    const icon = result.action === "block" ? "🛑" : "✅";
+    log.info(`${TAG} ━━━ RESULT: ${icon} ${result.action.toUpperCase()} ━━━`);
+    log.info(`${TAG} risk=${result.riskScore.toFixed(2)} latency=${result.latencyMs}ms`);
+    if (result.reason) log.warn(`${TAG} memory threat: ${result.reason}`);
+  });
+
+  log.info(`${TAG} registered (llm_output for memory safety)`);
 }
 
 async function analyzeMemory(
-  ctx: MemoryStoreContext,
+  content: string,
   config: AegisGuardConfig,
+  log: OpenClawPluginAPI["logger"],
 ): Promise<GuardResult> {
   const start = Date.now();
-  const aegis = getClient();
-
   try {
-    const res = await aegis.agent.memoryPoisoning({
-      messages: ctx.recentMessages.map(m => ({
-        role: m.role,
-        content: m.content,
-      })),
-      memory_entries: ctx.newEntries,
-      session_id: ctx.session.id,
-    }) as {
-      is_poisoned?: boolean;
-      risk_score?: number;
-      attack_types?: string[];
-      recommendations?: string[];
-    };
+    log.info(`${TAG} calling AEGIS /v3/agent/memory-poisoning ...`);
+    const res: any = await aegisApi.memoryPoisoning({
+      messages: [{ role: "assistant", content }],
+      memory_entries: [content],
+      session_id: "current",
+    });
 
     const riskScore = res.risk_score ?? 0;
+    log.info(`${TAG} memory-poisoning → poisoned=${res.is_poisoned} risk=${riskScore.toFixed(2)} attacks=[${(res.attack_types ?? []).join(", ")}]`);
 
     return {
       action: res.is_poisoned && riskScore >= config.riskThresholds.block
         ? "block"
         : res.is_poisoned && riskScore >= config.riskThresholds.escalate
-          ? "escalate"
-          : "allow",
+          ? "escalate" : "allow",
       reason: res.is_poisoned
-        ? `Memory poisoning detected: ${(res.attack_types ?? []).join(", ")} (risk=${riskScore.toFixed(2)})`
-        : undefined,
+        ? `Memory poisoning: ${(res.attack_types ?? []).join(", ")} (risk=${riskScore.toFixed(2)})` : undefined,
       riskScore,
-      details: {
-        source: "v3/agent/memory-poisoning",
-        attackTypes: res.attack_types,
-        recommendations: res.recommendations,
-      },
+      details: { source: "v3/agent/memory-poisoning" },
       latencyMs: Date.now() - start,
     };
-  } catch {
+  } catch (err) {
+    log.warn(`${TAG} memory-poisoning API failed: ${String(err)}`);
     return {
       action: config.guardMode === "strict" ? "block" : "allow",
       reason: "AEGIS memory scan unavailable — fallback policy applied",
-      riskScore: 0,
-      details: { source: "fallback" },
-      latencyMs: Date.now() - start,
+      riskScore: 0, details: { source: "fallback" }, latencyMs: Date.now() - start,
     };
   }
 }

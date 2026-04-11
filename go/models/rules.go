@@ -50,9 +50,11 @@ type RuleTestResponse struct {
 }
 
 type RuleTemplate struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Pattern     string `json:"pattern"`
-	Category    string `json:"category"`
+	ID                 string `json:"id"`
+	Name               string `json:"name"`
+	Description        string `json:"description"`
+	Pattern            string `json:"pattern"`
+	Category           string `json:"category"`
+	RegexExplanationKO string `json:"regex_explanation_ko,omitempty"`
+	RegexExplanationEN string `json:"regex_explanation_en,omitempty"`
 }

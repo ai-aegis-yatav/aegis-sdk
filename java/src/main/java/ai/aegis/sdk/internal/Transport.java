@@ -54,6 +54,10 @@ public final class Transport implements AutoCloseable {
         return execute("DELETE", path, null);
     }
 
+    public String patch(String path, Object body) {
+        return execute("PATCH", path, body);
+    }
+
     public void streamSse(String path, Object body, Consumer<String> eventConsumer) {
         URI uri = buildUri(path);
         String jsonBody = body != null ? JsonUtil.serialize(body) : null;
@@ -131,6 +135,10 @@ public final class Transport implements AutoCloseable {
                         break;
                     case "PUT":
                         reqBuilder.PUT(bodyPublisher(jsonBody));
+                        reqBuilder.header("Content-Type", "application/json");
+                        break;
+                    case "PATCH":
+                        reqBuilder.method("PATCH", bodyPublisher(jsonBody));
                         reqBuilder.header("Content-Type", "application/json");
                         break;
                     default:

@@ -1,105 +1,148 @@
-import { getClient } from "../aegis-client.js";
+import { aegisApi } from "../aegis-client.js";
 import { GuardCache, cacheKey } from "../cache.js";
 import { localPromptGuard } from "./local-fallback.js";
+import { formatInboundReport, formatCompactStatus, maskContent } from "./report-formatter.js";
 import type {
   AegisGuardConfig,
   GuardResult,
-  MessageProcessContext,
   OpenClawPluginAPI,
 } from "../types.js";
 
 const GUARD_NAME = "inbound";
+const TAG = "[aegis-guard:inbound]";
 
-/**
- * Registers the inbound message guard on the `preMessageProcess` phase.
- *
- * For every user message that enters the OpenClaw gateway this hook:
- *  1. Checks the local cache to avoid duplicate API calls within the TTL.
- *  2. Calls AEGIS `POST /v3/agent/scan` for DPI/IPI detection.
- *  3. Falls back to a lightweight `POST /v1/judge` call when the V3 scan
- *     is unavailable (rate limit, network failure).
- *  4. Applies the configured guard-mode thresholds to decide block / escalate / allow.
- */
 export function registerInboundGuard(
   api: OpenClawPluginAPI,
   config: AegisGuardConfig,
   cache: GuardCache,
 ): void {
-  api.lifecycle.on<MessageProcessContext>(
-    "preMessageProcess",
-    async (ctx) => {
-      const content = ctx.message.content;
-      if (!content) return;
+  const log = api.logger;
 
-      const key = cacheKey(GUARD_NAME, ctx.session.id, content);
-      const cached = cache.get(key);
-      if (cached) {
-        applyAction(ctx, cached, config);
-        return;
+  api.on("message_received", async (event: any, ctx: any) => {
+    const content = event?.content;
+    if (!content) return;
+
+    const sessionId = ctx?.conversationId ?? ctx?.channelId ?? "unknown";
+    const from = event?.from ?? "unknown";
+    log.info(`${TAG} ━━━ SCANNING inbound message ━━━`);
+    log.info(`${TAG} from="${from}" len=${content.length} session=${sessionId}`);
+    log.info(`${TAG} preview: "${content.slice(0, 100)}${content.length > 100 ? "..." : ""}"`);
+
+    const key = cacheKey(GUARD_NAME, sessionId, content);
+    const cached = cache.get(key);
+    if (cached) {
+      log.info(`${TAG} cache HIT action=${cached.action} risk=${cached.riskScore.toFixed(2)}`);
+      if (cached.action === "block") {
+        return {
+          block: true,
+          blockReason: cached.reason ?? "Blocked by AEGIS Guard",
+          reply: formatInboundReport(cached, content.slice(0, 60), "inbound"),
+        };
       }
+      return;
+    }
 
-      const result = await scanInbound(content, ctx, config);
-      cache.set(key, result);
-      applyAction(ctx, result, config);
-    },
-    { priority: 0, timeout: config.timeout },
-  );
+    const apiResult = await scanInbound(content, sessionId, from, config, log);
+    const localResult = localPromptGuard(content);
 
-  api.log.info("[aegis-guard] inbound guard registered (preMessageProcess)");
+    log.info(`${TAG} API: action=${apiResult.action} risk=${apiResult.riskScore.toFixed(2)}`);
+    log.info(`${TAG} Local: action=${localResult.action} risk=${localResult.riskScore.toFixed(2)}`);
+
+    const result = (apiResult.action !== "allow")
+      ? apiResult
+      : (localResult.action === "block") ? localResult : apiResult;
+
+    log.info(`${TAG} FINAL: action=${result.action} risk=${result.riskScore.toFixed(2)} source=${result.details?.source ?? "?"}`);
+    cache.set(key, result);
+    logResult(result, log);
+
+    // --- Report to chat ---
+    if (result.action === "block") {
+      return {
+        block: true,
+        blockReason: result.reason ?? "Blocked by AEGIS Guard",
+        reply: formatInboundReport(result, content.slice(0, 60), "inbound"),
+      };
+    }
+
+    if (result.action === "escalate") {
+      return {
+        reply: formatInboundReport(result, content.slice(0, 60), "inbound"),
+      };
+    }
+
+    // ALLOW — inject compact status as metadata (visible in logs, non-intrusive)
+    return {
+      metadata: { aegisStatus: formatCompactStatus(result, "in") },
+    };
+  });
+
+  log.info(`${TAG} registered (message_received)`);
+}
+
+function logResult(result: GuardResult, log: OpenClawPluginAPI["logger"]): void {
+  const icon = result.action === "block" ? "🛑" : result.action === "escalate" ? "⚠️" : "✅";
+  log.info(`${TAG} ━━━ RESULT: ${icon} ${result.action.toUpperCase()} ━━━`);
+  log.info(`${TAG} risk=${result.riskScore.toFixed(2)} latency=${result.latencyMs}ms source=${result.details?.source ?? "?"}`);
+  if (result.reason) log.warn(`${TAG} reason: ${result.reason}`);
 }
 
 async function scanInbound(
   content: string,
-  ctx: MessageProcessContext,
+  sessionId: string,
+  from: string,
   config: AegisGuardConfig,
+  log: OpenClawPluginAPI["logger"],
 ): Promise<GuardResult> {
   const start = Date.now();
-  const aegis = getClient();
 
   try {
-    const res = await aegis.agent.scan({
+    log.info(`${TAG} calling AEGIS /v3/agent/scan ...`);
+    const res: any = await aegisApi.agentScan({
       prompt: content,
       context: {
-        session_id: ctx.session.id,
-        user_id: ctx.sender.id,
+        session_id: sessionId,
+        user_id: from,
         agent_type: "openclaw",
-        platform: ctx.sender.platform,
       },
     });
 
-    const riskScore = res.confidence;
+    const threats = res.threats ?? [];
+    const topThreat = threats[0];
+    const riskScore = topThreat?.confidence ?? 0;
+    const injectionDetected = !res.is_safe && threats.length > 0;
+    const injectionType = topThreat?.threat_type ?? "none";
+    log.info(`${TAG} /v3/agent/scan → is_safe=${res.is_safe} threats=${threats.length} type=${injectionType} confidence=${riskScore.toFixed(2)}`);
     return {
       action: riskScore >= config.riskThresholds.block
         ? "block"
         : riskScore >= config.riskThresholds.escalate
           ? "escalate"
           : "allow",
-      reason: res.injection_detected
-        ? `${res.injection_type ?? "injection"} detected (confidence=${riskScore.toFixed(2)})`
+      reason: injectionDetected
+        ? `${injectionType} detected (confidence=${riskScore.toFixed(2)})`
         : undefined,
       riskScore,
       details: { source: "v3/agent/scan", ...res.details },
       latencyMs: Date.now() - start,
     };
-  } catch {
-    return fallbackJudge(content, start, config);
+  } catch (err) {
+    log.warn(`${TAG} /v3/agent/scan failed: ${String(err)} — falling back`);
+    return fallbackJudge(content, start, config, log);
   }
 }
 
-/**
- * Two-tier fallback: first try the V1 judge endpoint (lighter weight),
- * then fall back to a purely local pattern matcher if the API is
- * completely unreachable.
- */
 async function fallbackJudge(
   content: string,
   start: number,
   config: AegisGuardConfig,
+  log: OpenClawPluginAPI["logger"],
 ): Promise<GuardResult> {
   try {
-    const aegis = getClient();
-    const res = await aegis.judge.create({ content });
+    log.info(`${TAG} trying fallback /v1/judge ...`);
+    const res: any = await aegisApi.judge({ content });
     const riskScore = res.risk?.score ?? 0;
+    log.info(`${TAG} /v1/judge → decision=${res.decision} risk=${riskScore.toFixed(2)} label=${res.risk?.label ?? "none"}`);
     return {
       action: riskScore >= config.riskThresholds.block
         ? "block"
@@ -111,22 +154,10 @@ async function fallbackJudge(
       details: { source: "v1/judge", decision: res.decision },
       latencyMs: Date.now() - start,
     };
-  } catch {
-    return localPromptGuard(content);
-  }
-}
-
-function applyAction(
-  ctx: MessageProcessContext,
-  result: GuardResult,
-  _config: AegisGuardConfig,
-): void {
-  switch (result.action) {
-    case "block":
-      ctx.block(result.reason ?? "Blocked by AEGIS Guard");
-      break;
-    case "escalate":
-      ctx.escalate(result.reason ?? "Flagged for human review by AEGIS Guard");
-      break;
+  } catch (err) {
+    log.warn(`${TAG} /v1/judge failed: ${String(err)} — using local pattern guard`);
+    const result = localPromptGuard(content);
+    log.info(`${TAG} local fallback → action=${result.action} risk=${result.riskScore.toFixed(2)}`);
+    return result;
   }
 }
